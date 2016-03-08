@@ -13,7 +13,7 @@ The code is in python and uses Theano package.
 
 
 ## Usage
-Prepare the data according to ``data/README.md```.
+Prepare the data according to ```data/README.md```.
 ```
 cd src; python san_att_conv_twolayer.py
 ```
@@ -22,7 +22,7 @@ to start training.
 ## Reference
 If you use this code as part of your research, please cite our paper
 
-**'Stacked Attention Netowrks for Image Question Answering'**,
+**''Stacked Attention Netowrks for Image Question Answering''**,
 Zichao Yang, Xiaodong He, Jianfeng Gao, Li Deng and Alex Smola.
 To appear in CVPR 2016.
 
