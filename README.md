@@ -13,7 +13,7 @@ The code is in python and uses Theano package.
 
 
 ## Usage
-Prepare the data according to ```data/README.md```.
+Downloads the data from [here](https://drive.google.com/file/d/0BxWe_IuTnMFcUHBhTnFHbzEzaDA/view?usp=sharing) and extract them at ```data```.
 ```
 cd src; python san_att_conv_twolayer.py
 ```

@@ -9,7 +9,7 @@ import argparse
 import math
 
 from optimization_weight import *
-from imageq_a_classify_lstm_concat_att_twolayer_theano import *
+from san_att_lstm_twolayer_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
 
