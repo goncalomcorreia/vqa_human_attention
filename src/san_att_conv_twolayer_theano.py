@@ -4,7 +4,7 @@ import pdb
 import theano
 import theano.tensor as T
 from theano.tensor.nnet import conv
-from theano.tensor.signal import downsample
+from theano.tensor.signal import pool
 
 import numpy
 import numpy as np
@@ -194,7 +194,7 @@ def convlayer(shared_params, x, options, prefix='conv', act_func='tanh'):
                           shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
 
 def maxpool_layer(shared_params, x, maxpool_shape, options):
-    return downsample.max_pool_2d(x, maxpool_shape, ignore_border=False)
+    return pool.pool_2d(x, maxpool_shape, ignore_border=False)
 
 def dropout_layer(x, dropout, trng, drop_ratio=0.5):
     ''' dropout layer
