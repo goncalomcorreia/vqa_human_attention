@@ -2,7 +2,7 @@
 
 import pdb
 import sys
-dataDir = '/home/zichaoy/VQA'
+dataDir = '/Users/goncalocorreia/VQA'
 sys.path.insert(0, '%s/PythonHelperTools/vqaTools' %(dataDir))
 sys.path.insert(0, '%s/PythonEvaluationTools/vqaEvaluation' %(dataDir))
 
@@ -65,12 +65,12 @@ question_dict_count = dict()
 answer_dict_count = dict()
 
 for idx, q_id in enumerate(train_question_ids):
-    question = vqa.loadQuestion(q_id)[0]
+    question = vqa.qqa[q_id]['question']
     question = process_sentence(question)
     question = question.split()
     for word in question:
         question_dict_count[word] = question_dict_count.get(word, 0) + 1
-    answer = vqa.loadAnswer(q_id)[0]
+    answer = vqa.loadQA(q_id)[0]['answers'][0]['answer']
     answer_new = [process_answer(ans) for ans in answer]
     for word in answer_new:
         answer_dict_count[word] = answer_dict_count.get(word, 0) + 1

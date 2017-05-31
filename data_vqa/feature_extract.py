@@ -26,13 +26,13 @@ def get_feature(image, model, blob_name):
 
 
 
-# with open(image_list_file) as f:
-#     for line in f:
-#         image_list.append(line.split()[0])
-#         image = cv2.imread(os.path.join(image_folder, image_list[-1]))
-#         border = (image.shape[0] - image_size) / 2
-#         image = image[border : border + image_size,
-#                       border : border + image_size,
-#                       :]
-#         feat = get_feature(image, model, 'fc7')
-#         break
+with open(image_list_file) as f:
+    for line in f:
+        image_list.append(line.split()[0])
+        image = cv2.imread(os.path.join(image_folder, image_list[-1]))
+        border = (image.shape[0] - image_size) / 2
+        image = image[border : border + image_size,
+                      border : border + image_size,
+                      :]
+        feat = get_feature(image, model, 'fc7')
+        break
