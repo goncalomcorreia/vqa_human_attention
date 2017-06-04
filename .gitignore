@@ -8,6 +8,7 @@ __pycache__/
 *.model
 # C extensions
 *.so
+*.png
 
 # Distribution / packaging
 .Python
