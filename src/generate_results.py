@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-
+import sys
+sys.path.append('/home/s1670404/imageqa-san/src/')
 
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
@@ -7,14 +8,14 @@ from data_provision_att_vqa import *
 from data_processing_vqa import *
 
 import pickle
-f = open('../data_vqa/answer_dict.pkl', 'r')
+f = open('/home/s1670404/imageqa-san/data_vqa/answer_dict.pkl', 'r')
 answer_dict = pickle.load(f)
 f.close()
 answer_dict = {v: k for k, v in answer_dict.iteritems()}
 
 result = OrderedDict()
 
-options, params, shared_params = load_model('../expt/imageqa_best_0.523.model')
+options, params, shared_params = load_model('/home/s1670404/imageqa-san/expt/imageqa_best_0.523.model')
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
@@ -59,9 +60,7 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
 
 results = [result]
 
-for elem in results[0]:
-    lis.append({'question_id':int(elem), 'answer':results[0][elem]})
-
 import json
-with open('results.json', 'w') as outfile:
-    json.dump(lis, outfile)
+with open('/home/s1670404/imageqa-san/src/results.json', 'w') as outfile:
+    json.dump(results, outfile)
+
