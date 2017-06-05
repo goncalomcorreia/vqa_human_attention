@@ -32,7 +32,7 @@ get_att_2 = theano.function(
     outputs=[prob_attention_2],
     on_unused_input='warn')
 
-
+options['data_path']='/home/s1670404/vqa_human_attention/data_vqa'
 data_provision_att_vqa = DataProvisionAttVqa(
     options['data_path'], options['feature_file'])
 
@@ -55,4 +55,4 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
         np.transpose(input_idx),
         np.transpose(input_mask))
 
-    import ipdb; ipdb.set_trace()
+    import pdb; pdb.set_trace()
