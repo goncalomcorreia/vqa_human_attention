@@ -22,3 +22,37 @@ image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
 prob_attention_1, prob_attention_2 = build_model(
     shared_params, options)
+
+
+get_att_2 = theano.function(
+    inputs=[
+        image_feat,
+        input_idx,
+        input_mask],
+    outputs=[prob_attention_2],
+    on_unused_input='warn')
+
+
+data_provision_att_vqa = DataProvisionAttVqa(
+    options['data_path'], options['feature_file'])
+
+val_cost_list = []
+val_accu_list = []
+val_count = 0
+dropout.set_value(numpy.float32(0.))
+
+i=0
+
+for batch_image_feat, batch_question, batch_answer_label in data_provision_att_vqa.iterate_batch(
+        options['val_split'], options['batch_size']):
+    input_idx, input_mask = process_batch(
+        batch_question, reverse=options['reverse'])
+    batch_image_feat = reshape_image_feat(batch_image_feat,
+                                          options['num_region'],
+                                          options['region_dim'])
+    [prob_attention_2] = get_att_2(
+        batch_image_feat,
+        np.transpose(input_idx),
+        np.transpose(input_mask))
+
+    import ipdb; ipdb.set_trace()
