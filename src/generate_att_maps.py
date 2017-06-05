@@ -6,6 +6,12 @@ from optimization_weight import *
 from san_att_conv_twolayer_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+
+import skimage
+import skimage.transform
+import skimage.io
 
 import pickle
 f = open('/home/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl', 'r')
@@ -55,4 +61,13 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
         np.transpose(input_idx),
         np.transpose(input_mask))
 
-    import pdb; pdb.set_trace()
+    for att_map in prob_attention_2:
+        alpha_img = skimage.transform.pyramid_expand(
+            att_map.reshape(14,14), upscale=16, sigma=20)
+        fig = plt.figure(figsize=(12, 10))
+        ax1 = fig.add_subplot(1, 1, 1)
+        ax1.imshow(alpha_img, alpha=0.8)
+        ax1.set_cmap(cm.Greys_r)
+        ax1.axis('off')
+        fig.savefig("test_att.png", bbox_inches='tight')
+        break
