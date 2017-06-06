@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys
-sys.path.append('/home/s1670404/vqa_human_attention/src/')
+#sys.path.append('/home/s1670404/vqa_human_attention/src/')
 
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
@@ -14,15 +14,21 @@ import skimage.transform
 import skimage.io
 
 import pickle
-f = open('/home/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl', 'r')
+
+answer_dict_path = '/home/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl'
+answer_dict_path = '/Users/goncalocorreia/vqa_human_attention/data_vqa/answer_dict.pkl'
+
+f = open(answer_dict_path, 'r')
 answer_dict = pickle.load(f)
 f.close()
 answer_dict = {v: k for k, v in answer_dict.iteritems()}
 
 result = OrderedDict()
 
-options, params, shared_params = load_model(
-    '/home/s1670404/vqa_human_attention/expt/imageqa_best_0.523.model')
+model_path = '/home/s1670404/vqa_human_attention/expt/imageqa_best_0.523.model'
+model_path = '/Users/goncalocorreia/vqa_human_attention/expt/imageqa_best_0.523.model'
+
+options, params, shared_params = load_model(model_path)
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
@@ -38,7 +44,10 @@ get_att_2 = theano.function(
     outputs=[prob_attention_2],
     on_unused_input='warn')
 
-options['data_path']='/home/s1670404/vqa_human_attention/data_vqa'
+data_path = '/home/s1670404/vqa_human_attention/data_vqa'
+data_path = '/Users/goncalocorreia/vqa_human_attention/data_vqa'
+
+options['data_path']=data_path
 data_provision_att_vqa = DataProvisionAttVqa(
     options['data_path'], options['feature_file'])
 
@@ -64,10 +73,9 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
     for att_map in prob_attention_2:
         alpha_img = skimage.transform.pyramid_expand(
             att_map.reshape(14,14), upscale=16, sigma=20)
-        fig = plt.figure(figsize=(12, 10))
-        ax1 = fig.add_subplot(1, 1, 1)
-        ax1.imshow(alpha_img, alpha=0.8)
-        ax1.set_cmap(cm.Greys_r)
-        ax1.axis('off')
-        fig.savefig("test_att.png", bbox_inches='tight')
+        # fig = plt.figure(figsize=(12, 10))
+        # fig.imshow(alpha_img, alpha=0.8)
+        # fig.set_cmap(cm.Greys_r)
+        # fig.axis('off')
+        # fig.savefig("test_att.png", bbox_inches='tight')
         break
