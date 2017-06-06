@@ -14,7 +14,7 @@ from collections import OrderedDict
 
 logger = logging.getLogger('root')
 
-class DataProvisionAttVqa:
+class DataProvisionAttVqa(object):
     def __init__(self, data_folder, feature_file):
         self._image_feat = self.load_image_feat(data_folder, feature_file)
         self._question_id = OrderedDict()
