@@ -10,8 +10,8 @@ import argparse
 import math
 sys.path.append('/home/s1670404/vqa_human_attention/src/')
 from optimization_weight import *
-from san_att_conv_twolayer_theano import *
-from data_provision_att_vqa import *
+from maps_san_att_conv_twolayer_theano import *
+from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
 ##################

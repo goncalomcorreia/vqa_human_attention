@@ -25,8 +25,8 @@ for train_att_img in os.listdir(train_path):
     train_att_maps.append(normalized_sample)
     att_map_qids.append(qid)
 
-with open('train_att_maps.pkl', 'w') as f:
-    pkl.dump(np.array(train_att_maps), f)
+att_map_qids = [int(elem) for elem in att_map_qids]
+with open('train.pkl', 'w') as f:
     pkl.dump(att_map_qids, f)
 
 val_att_maps = []
@@ -46,7 +46,15 @@ for val_att_img in os.listdir(val_path):
     val_att_map_qids.append(qid)
     val_map_ids.append(map_id)
 
-with open('val_att_maps.pkl', 'w') as f:
-    pkl.dump(np.array(val_att_maps), f)
+val_att_map_qids = [int(elem) for elem in val_att_map_qids]
+with open('val.pkl', 'w') as f:
     pkl.dump(val_att_map_qids, f)
-    pkl.dump(val_map_ids, f)
+
+map_qids = att_map_qids + val_map_ids
+map_qids = [int(float(i)) for i in map_qids]
+map_dist = np.zeros((len(map_qids), 196), dtype='float32')
+map_dist[0:len(att_map_qids)] = train_att_maps
+map_dist[len(att_map_qids):] = val_att_maps
+map_dist_h5 = h5py.File('map_dist_196.h5', 'w')
+map_dist_h5['label'] = map_dist
+map_dist_h5.close()
