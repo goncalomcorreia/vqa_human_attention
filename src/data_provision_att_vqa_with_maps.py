@@ -188,6 +188,7 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
                                      axis = 0)
             batch_answer_label = [random.choice(ans)for ans in batch_answer]
             batch_answer_label = np.array(batch_answer_label)
+            batch_map_label = self._map_label[partition][self._pointer[partition]:]
             batch_map_label = np.append(batch_map_label,
                                            self._map_label[partition][:next_pointer],
                                            axis = 0)
