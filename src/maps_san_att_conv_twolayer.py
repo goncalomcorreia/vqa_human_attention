@@ -115,7 +115,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, total_cost \
+        prob_attention_1, prob_attention_2, total_cost, map_label \
         = build_model(shared_params, options)
 
     logger.info('finished building model')
@@ -154,12 +154,12 @@ def train(options):
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
-    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
+    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
                               outputs = [total_cost, accu],
                               updates = update_grad,
                               on_unused_input='warn')
     # validation function no gradient updates
-    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
+    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
                             outputs = [total_cost, accu],
                             on_unused_input='warn')
 

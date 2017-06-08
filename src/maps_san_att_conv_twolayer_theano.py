@@ -236,7 +236,7 @@ def build_model(shared_params, options):
     input_mask = T.matrix('input_mask')
     # label is the TRUE label
     label = T.ivector('label')
-    map_label = T.imatrix('map_label')
+    map_label = T.matrix('map_label')
 
     empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
                                               dtype='float32'),
@@ -343,8 +343,9 @@ def build_model(shared_params, options):
                                             'combined_att_mlp_act', 'tanh'))
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
-    map_cost = T.nnet.categorical_crossentropy(prob_attention_2, map_label)
-
+    prob_map = T.sum(prob_attention_2*map_label, axis=0)
+    map_cost = -T.mean(T.log(prob_map))
+    
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
     if options.get('use_final_image_feat_only', False):
@@ -381,7 +382,7 @@ def build_model(shared_params, options):
         # label, dropout, cost, accu
     return image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, total_cost
+        prob_attention_1, prob_attention_2, total_cost, map_label
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu, pred_label, \
