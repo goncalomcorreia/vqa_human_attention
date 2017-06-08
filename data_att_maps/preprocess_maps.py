@@ -5,6 +5,7 @@ from skimage import io
 import os
 import numpy as np
 import pickle as pkl
+import h5py
 
 data_path = '/Users/goncalocorreia/vqa_human_attention/data_att_maps'
 
@@ -21,7 +22,10 @@ for train_att_img in os.listdir(train_path):
     resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
     downscaled_sample=skimage.transform.pyramid_reduce(resized_sample, downscale=32)
     flat_sample = downscaled_sample.flatten()
-    normalized_sample = flat_sample/flat_sample.sum()
+    if flat_sample.sum()==0:
+        normalized_sample = flat_sample
+    else:
+        normalized_sample = flat_sample/flat_sample.sum()
     train_att_maps.append(normalized_sample)
     att_map_qids.append(qid)
 
