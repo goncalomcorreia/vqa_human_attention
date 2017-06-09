@@ -3,7 +3,7 @@ import sys
 sys.path.append('/home/s1670404/vqa_human_attention/src/')
 
 from optimization_weight import *
-from maps_san_att_conv_twolayer_theano import *
+from san_att_conv_twolayer_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
 
@@ -15,11 +15,11 @@ answer_dict = {v: k for k, v in answer_dict.iteritems()}
 
 result = OrderedDict()
 
-options, params, shared_params = load_model('/home/s1670404/vqa_human_attention/expt/maps_model_best_0.493.model')
+options, params, shared_params = load_model('/home/s1670404/vqa_human_attention/expt/baseline_subset_best_0.469.model')
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
-prob_attention_1, prob_attention_2,total_cost, map_label = build_model(
+prob_attention_1, prob_attention_2 = build_model(
     shared_params, options)
 
 f_pass = theano.function(
@@ -61,6 +61,6 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
 results = [result]
 
 import json
-with open('/home/s1670404/results.json', 'w') as outfile:
+with open('/home/s1670404/subset_results.json', 'w') as outfile:
     json.dump(results, outfile)
 

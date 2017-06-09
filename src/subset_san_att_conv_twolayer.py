@@ -22,7 +22,8 @@ options = OrderedDict()
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt'
-options['model_name'] = 'imageqa'
+options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+options['model_name'] = 'baseline_subset'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -100,7 +101,7 @@ def train(options):
     logger.info('start training')
 
     data_provision_att_vqa = DataProvisionAttVqaSubset(options['data_path'],
-                                                 options['feature_file'])
+                                                 options['feature_file'], options['map_data_path'])
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']

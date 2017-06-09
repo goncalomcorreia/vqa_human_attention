@@ -7,7 +7,7 @@ logger = logging.getLogger('root')
 
 class DataProvisionAttVqaSubset(DataProvisionAttVqa):
     def __init__(self, data_folder, feature_file, maps_data_folder):
-        super(DataProvisionAttVqaWithMaps, self).__init__(
+        super(DataProvisionAttVqaSubset, self).__init__(
             data_folder, feature_file
         )
         self._att_maps = OrderedDict()
