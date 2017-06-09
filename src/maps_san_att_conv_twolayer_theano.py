@@ -343,9 +343,9 @@ def build_model(shared_params, options):
                                             'combined_att_mlp_act', 'tanh'))
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
-    prob_map = T.sum(prob_attention_2*map_label, axis=0)
+    prob_map = T.sum(T.sqr(prob_attention_2-map_label), axis=0)
     map_cost = -T.mean(T.log(prob_map))
-    
+
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
     if options.get('use_final_image_feat_only', False):
