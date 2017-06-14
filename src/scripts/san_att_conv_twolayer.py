@@ -2,14 +2,17 @@
 
 import datetime
 import os
+os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32"
 import sys
-import log
+import logging as log
 import logging
 import argparse
 import math
-
+sys.path.append('/home/s1670404/imageqa-san/src/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 from optimization_weight import *
-from san_att_lstm_twolayer_theano import *
+from san_att_conv_twolayer_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
 
@@ -18,14 +21,14 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '../data_vqa'
+options['data_path'] = '/home/s1670404/imageqa-san/data_vqa'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = 'expt_1'
+options['expt_folder'] = '/home/s1670404/imageqa-san/expt/baseline'
 options['model_name'] = 'imageqa'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
-options['reverse'] = True
+options['reverse'] = False
 options['sample_answer'] = True
 
 options['num_region'] = 196
@@ -40,14 +43,21 @@ options['combined_mlp_drop_0'] = True
 options['combined_mlp_act_0'] = 'linear'
 options['sent_drop'] = False
 options['use_tanh'] = False
+options['use_unigram_conv'] = True
+options['use_bigram_conv'] = True
+options['use_trigram_conv'] = True
 
 options['use_attention_drop'] = False
+options['use_before_attention_drop'] = False
 
 # dimensions
 options['n_emb'] = 500
-options['n_dim'] = 1024
+options['n_dim'] = 500
 options['n_image_feat'] = options['region_dim']
 options['n_common_feat'] = 500
+options['num_filter_unigram'] = 256
+options['num_filter_bigram'] = 512
+options['num_filter_trigram'] = 512
 options['n_attention'] = 512
 
 # initialization
@@ -56,12 +66,10 @@ options['range'] = 0.01
 options['std'] = 0.01
 options['init_lstm_svd'] = False
 
-options['forget_bias'] = numpy.float32(1.0)
-
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(0.05)
+options['lr'] = numpy.float32(0.1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
@@ -106,7 +114,10 @@ def train(options):
     shared_params = init_shared_params(params)
 
     image_feat, input_idx, input_mask, \
-        label, dropout, cost, accu  = build_model(shared_params, options)
+        label, dropout, cost, accu, pred_label, \
+        prob_attention_1, prob_attention_2 \
+        = build_model(shared_params, options)
+
     logger.info('finished building model')
 
     ####################
@@ -181,7 +192,8 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [cost, accu] = f_val(batch_image_feat, input_idx, input_mask,
+                [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
+                                     np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
                 val_count += batch_image_feat.shape[0]
                 val_cost_list.append(cost * batch_image_feat.shape[0])
@@ -207,7 +219,8 @@ def train(options):
                                               options['num_region'],
                                               options['region_dim'])
 
-        [cost, accu] = f_train(batch_image_feat, input_idx, input_mask,
+        [cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
+                               np.transpose(input_mask),
                                batch_answer_label.astype('int32').flatten())
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)

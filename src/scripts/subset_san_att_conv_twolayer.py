@@ -9,9 +9,11 @@ import logging
 import argparse
 import math
 sys.path.append('/home/s1670404/vqa_human_attention/src/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 from optimization_weight import *
-from maps_san_att_conv_twolayer_theano import *
-from data_provision_att_vqa_with_maps import *
+from san_att_conv_twolayer_theano import *
+from data_provision_att_vqa_subset import *
 from data_processing_vqa import *
 
 ##################
@@ -20,10 +22,10 @@ from data_processing_vqa import *
 options = OrderedDict()
 # data related
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
-options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt'
-options['model_name'] = 'maps_model'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/subset-baseline'
+options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+options['model_name'] = 'baseline_subset'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -100,9 +102,8 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
-    data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
-                                                         options['feature_file'],
-                                                         options['map_data_path'])
+    data_provision_att_vqa = DataProvisionAttVqaSubset(options['data_path'],
+                                                 options['feature_file'], options['map_data_path'])
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
@@ -115,7 +116,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, total_cost, map_label \
+        prob_attention_1, prob_attention_2 \
         = build_model(shared_params, options)
 
     logger.info('finished building model')
@@ -132,7 +133,7 @@ def train(options):
             reg_cost += (shared_params[k]**2).sum()
 
     reg_cost *= weight_decay
-    reg_cost = total_cost + reg_cost
+    reg_cost = cost + reg_cost
 
     ###############
     # # gradients #
@@ -154,13 +155,13 @@ def train(options):
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
-    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                              outputs = [total_cost, accu],
+    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
+                              outputs = [cost, accu],
                               updates = update_grad,
                               on_unused_input='warn')
     # validation function no gradient updates
-    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                            outputs = [total_cost, accu],
+    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
+                            outputs = [cost, accu],
                             on_unused_input='warn')
 
     f_grad_cache_update, f_param_update \
@@ -183,7 +184,7 @@ def train(options):
             val_accu_list = []
             val_count = 0
             dropout.set_value(numpy.float32(0.))
-            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+            for batch_image_feat, batch_question, batch_answer_label \
                 in data_provision_att_vqa.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
@@ -192,12 +193,11 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [total_cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
+                [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
-                                     batch_answer_label.astype('int32').flatten(),
-                                     batch_map_label)
+                                     batch_answer_label.astype('int32').flatten())
                 val_count += batch_image_feat.shape[0]
-                val_cost_list.append(total_cost * batch_image_feat.shape[0])
+                val_cost_list.append(cost * batch_image_feat.shape[0])
                 val_accu_list.append(accu * batch_image_feat.shape[0])
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
@@ -208,11 +208,11 @@ def train(options):
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
-            batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+            batch_image_feat, batch_question, batch_answer_label \
                 = data_provision_att_vqa.next_batch_sample(options['train_split'],
                                                        batch_size)
         else:
-            batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+            batch_image_feat, batch_question, batch_answer_label \
                 = data_provision_att_vqa.next_batch(options['train_split'], batch_size)
         input_idx, input_mask \
             = process_batch(batch_question, reverse=options['reverse'])
@@ -220,10 +220,9 @@ def train(options):
                                               options['num_region'],
                                               options['region_dim'])
 
-        [total_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
+        [cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
                                np.transpose(input_mask),
-                               batch_answer_label.astype('int32').flatten(),
-                               batch_map_label)
+                               batch_answer_label.astype('int32').flatten())
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
         # pdb.set_trace()
@@ -239,8 +238,8 @@ def train(options):
             logger.info('iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
                         % (itr, max_iters,
                            itr / float(num_iters_one_epoch), max_epochs,
-                           total_cost, accu, lr_t))
-            if np.isnan(total_cost):
+                           cost, accu, lr_t))
+            if np.isnan(cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'
                 logger.info('saving the debug model to %s' %(file_name))
