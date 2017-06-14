@@ -8,7 +8,7 @@ import sys
 name = sys.argv[1]
 arrays_path = sys.argv[2]
 
-with load(arrays_path) as data:
+with np.load(arrays_path) as data:
     err_train = data['train_error']
     err_valid = data['train_accuracy']
     acc_train = data['valid_error']
