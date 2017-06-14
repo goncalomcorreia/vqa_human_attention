@@ -179,6 +179,11 @@ def train(options):
     best_val_accu = 0.0
     best_param = dict()
 
+    train_learn_curve_acc = []
+    train_learn_curve_err = []
+    val_learn_curve_acc = []
+    val_learn_curve_err = []
+
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
@@ -207,6 +212,10 @@ def train(options):
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
             logger.info('validation cost: %f accu: %f' %(ave_val_cost, ave_val_accu))
+            train_learn_curve_acc.append(accu)
+            train_learn_curve_err.append(cost)
+            val_learn_curve_acc.append(ave_val_accu)
+            val_learn_curve_err.append(ave_val_cost)
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -256,6 +265,17 @@ def train(options):
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
+    train_learn_curve_acc = np.array(train_learn_curve_acc)
+    train_learn_curve_err = np.array(train_learn_curve_err)
+    val_learn_curve_acc = np.array(val_learn_curve_acc)
+    val_learn_curve_err = np.array(val_learn_curve_err)
+    np.savez_compressed(
+        os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
+        train_error=train_learn_curve_err,
+        train_accuracy=train_learn_curve_acc,
+        valid_error=val_learn_curve_err,
+        valid_accuracy=val_learn_curve_acc
+    )
 
     return best_val_accu
 
