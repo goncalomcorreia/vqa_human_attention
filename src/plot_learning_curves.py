@@ -10,8 +10,8 @@ arrays_path = sys.argv[2]
 
 with np.load(arrays_path) as data:
     err_train = data['train_error']
-    err_valid = data['train_accuracy']
-    acc_train = data['valid_error']
+    acc_train = data['train_accuracy']
+    err_valid = data['valid_error']
     acc_valid = data['valid_accuracy']
 
 fig = plt.figure(figsize=(12, 10))
