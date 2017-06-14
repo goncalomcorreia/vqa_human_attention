@@ -20,7 +20,7 @@ for train_att_img in os.listdir(train_path):
     file_path = os.path.join(train_path, train_att_img)
     sample = io.imread(file_path)
     resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
-    downscaled_sample=skimage.transform.pyramid_reduce(resized_sample, downscale=32)
+    downscaled_sample = skimage.transform.downscale_local_mean(resized_sample, factors=(32,32))
     flat_sample = downscaled_sample.flatten()
     if flat_sample.sum()==0:
         normalized_sample = flat_sample
