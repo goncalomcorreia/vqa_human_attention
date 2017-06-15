@@ -6,13 +6,26 @@ import os
 import sys
 
 name = sys.argv[1]
-arrays_path = sys.argv[2]
+i = 2
+arrays_path = []
+legend = []
+while i<len(sys.argv):
+    arrays_path.append(sys.argv[i])
+    i += 1
+    legend.append(sys.argv[i])
+    i += 1
 
-with np.load(arrays_path) as data:
-    err_train = data['train_error']
-    acc_train = data['train_accuracy']
-    err_valid = data['valid_error']
-    acc_valid = data['valid_accuracy']
+acc_train = []
+acc_valid = []
+err_train = []
+err_valid = []
+
+for array_path in arrays_path:
+    with np.load(array_path) as data:
+        #err_train.append(data['train_error'])
+        acc_train.append(data['train_accuracy'])
+        #err_valid.append(data['valid_error'])
+        acc_valid.append(data['valid_accuracy'])
 
 fig = plt.figure(figsize=(12, 10))
 
@@ -21,10 +34,11 @@ ax2 = fig.add_subplot(2, 2, 2)
 ax3 = fig.add_subplot(2, 2, 3)
 ax4 = fig.add_subplot(2, 2, 4)
 
-ax1.plot(err_train, label='Training Error')
-ax2.plot(err_valid, label='Validation Error')
-ax3.plot(acc_train, label='Training Accuracy')
-ax4.plot(acc_valid, label='Validation Accuracy')
+for i in xrange(len(arrays_path)):
+    #ax1.plot(err_train, label='Training Error')
+    #ax2.plot(err_valid, label='Validation Error')
+    ax3.plot(acc_train[i], label=legend[i])
+    ax4.plot(acc_valid[i], label=legend[i])
 
 ax1.legend(loc=0)
 ax1.set_xlabel('Epoch number')

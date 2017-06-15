@@ -199,13 +199,13 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [total_cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
+                [total_cost_val, accu_val] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten(),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
-                val_cost_list.append(total_cost * batch_image_feat.shape[0])
-                val_accu_list.append(accu * batch_image_feat.shape[0])
+                val_cost_list.append(total_cost_val * batch_image_feat.shape[0])
+                val_accu_list.append(accu_val * batch_image_feat.shape[0])
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
             if best_val_accu < ave_val_accu:
@@ -213,7 +213,7 @@ def train(options):
                 shared_to_cpu(shared_params, best_param)
             logger.info('validation cost: %f accu: %f' %(ave_val_cost, ave_val_accu))
             train_learn_curve_acc.append(accu)
-            train_learn_curve_err.append(cost)
+            train_learn_curve_err.append(total_cost)
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
 
