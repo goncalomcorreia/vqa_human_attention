@@ -164,20 +164,20 @@ def train(options):
                               outputs = [ans_cost, accu],
                               updates = ans_update_grad,
                               on_unused_input='warn')
-    logger.info('LALALALALA')
-    f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
+
+    f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                               outputs = [map_cost],
                               updates = maps_update_grad,
                               on_unused_input='warn')
-    logger.info('LALALALALA')
+
     # validation function no gradient updates
     f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
                             outputs = [ans_cost, accu],
                             on_unused_input='warn')
-    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
+    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                             outputs = [map_cost],
                             on_unused_input='warn')
-    logger.info('LALALALALA')
+
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     logger.info('finished building function')
@@ -192,16 +192,12 @@ def train(options):
     best_val_accu = 0.0
     best_param = dict()
 
-    train_learn_curve_acc = []
-    train_learn_curve_err = []
     val_learn_curve_acc = []
     val_learn_curve_err = []
+    val_learn_curve_err_map = []
 
-    train_cost_list = []
-    train_accu_list = []
-    train_count = 0
     for itr in xrange(max_iters + 1):
-        if ((itr % eval_interval_in_iters) == 0 or (itr == max_iters)) and itr!=0:
+        if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_map_cost_list = []
             val_accu_list = []
@@ -220,7 +216,7 @@ def train(options):
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),batch_answer_label.astype('int32').flatten(),
+                                     np.transpose(input_mask),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
                 val_cost_list.append(ans_cost_val * batch_image_feat.shape[0])
@@ -229,21 +225,13 @@ def train(options):
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
-            ave_train_cost = sum(train_cost_list) / float(train_count)
-            #TODO: train map cost
-            ave_train_accu = sum(train_accu_list) / float(train_count)
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
             logger.info('validation cost: %f accu: %f map cost: %f' %(ave_val_cost, ave_val_accu, ave_val_map_cost))
-            train_learn_curve_acc.append(accu)
-            train_learn_curve_err.append(ans_cost)
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
-            #TODO: Store validation map cost
-            train_cost_list = []
-            train_accu_list = []
-            train_count = 0
+            val_learn_curve_err_map.append(ave_val_map_cost)
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -263,7 +251,7 @@ def train(options):
                                np.transpose(input_mask),
                                batch_answer_label.astype('int32').flatten())
         [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
-                               np.transpose(input_mask),batch_answer_label.astype('int32').flatten(),
+                               np.transpose(input_mask),
                                batch_map_label)
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
@@ -272,10 +260,6 @@ def train(options):
         f_grad_cache_update()
         lr_t = get_lr(options, itr / float(num_iters_one_epoch))
         f_param_update(lr_t)
-
-        train_count += batch_image_feat.shape[0]
-        train_cost_list.append(ans_cost * batch_image_feat.shape[0])
-        train_accu_list.append(accu * batch_image_feat.shape[0])
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
             data_provision_att_vqa.random_shuffle()
@@ -299,14 +283,13 @@ def train(options):
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
-    train_learn_curve_acc = np.array(train_learn_curve_acc)
-    train_learn_curve_err = np.array(train_learn_curve_err)
+
     val_learn_curve_acc = np.array(val_learn_curve_acc)
     val_learn_curve_err = np.array(val_learn_curve_err)
+    val_learn_curve_err_map = np.array(val_learn_curve_err_map)
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
-        train_error=train_learn_curve_err,
-        train_accuracy=train_learn_curve_acc,
+        valid_error_map=val_learn_curve_err_map,
         valid_error=val_learn_curve_err,
         valid_accuracy=val_learn_curve_acc
     )

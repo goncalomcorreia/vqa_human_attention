@@ -15,43 +15,37 @@ while i<len(sys.argv):
     legend.append(sys.argv[i])
     i += 1
 
-acc_train = []
 acc_valid = []
-err_train = []
 err_valid = []
+err_map_valid = []
 
 for array_path in arrays_path:
     with np.load(array_path) as data:
-        #err_train.append(data['train_error'])
-        #acc_train.append(data['train_accuracy'])
         err_valid.append(data['valid_error'])
         acc_valid.append(data['valid_accuracy'])
+        err_map_valid.append(data['valid_error_map'])
 
 fig = plt.figure(figsize=(5, 7))
 
-#ax1 = fig.add_subplot(2, 2, 1)
-ax2 = fig.add_subplot(2, 1, 1)
-#ax3 = fig.add_subplot(1, 2, 1)
-ax4 = fig.add_subplot(2, 1, 2)
+ax1 = fig.add_subplot(3, 1, 1)
+ax2 = fig.add_subplot(3, 1, 2)
+ax3 = fig.add_subplot(3, 1, 3)
+
 
 for i in xrange(len(arrays_path)):
-    #ax1.plot(err_train[i], label=legend[i])
-    ax2.plot(err_valid[i], label=legend[i])
-    #ax3.plot(acc_train[i], label=legend[i])
-    ax4.plot(acc_valid[i], label=legend[i])
+    ax1.plot(err_valid[i], label=legend[i])
+    ax2.plot(acc_valid[i], label=legend[i])
+    ax3.plot(err_map_valid[i], label=legend[i])
 
-# ax1.legend(loc=0)
-# ax1.set_xlabel('Epoch number')
-# ax1.set_ylabel('Training set error')
-# ax1.set_yscale('log')
+ax1.legend(loc=0)
+ax1.set_xlabel('Epoch number')
+ax1.set_ylabel('Validation set cross entropy')
+ax1.set_yscale('log')
 ax2.legend(loc=0)
 ax2.set_xlabel('Epoch number')
-ax2.set_ylabel('Validation set error')
-ax2.set_yscale('log')
-# ax3.legend(loc=0)
-# ax3.set_xlabel('Epoch number')
-# ax3.set_ylabel('Training Accuracy')
-ax4.legend(loc=0)
-ax4.set_xlabel('Epoch number')
-ax4.set_ylabel('Validation Accuracy')
+ax2.set_ylabel('Validation Accuracy')
+ax3.legend(loc=0)
+ax3.set_xlabel('Epoch number')
+ax3.set_ylabel('Validation set map cross entropy')
+ax3.set_yscale('log')
 fig.savefig(name, bbox_inches='tight')

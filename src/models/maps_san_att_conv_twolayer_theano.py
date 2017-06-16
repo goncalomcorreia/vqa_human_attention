@@ -235,7 +235,7 @@ def build_model(shared_params, options):
     input_idx = T.imatrix('input_idx')
     input_mask = T.matrix('input_mask')
     # label is the TRUE label
-    label = T.ivector('label')
+    label = T.vector('label')
     map_label = T.matrix('map_label')
 
     empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
@@ -375,8 +375,6 @@ def build_model(shared_params, options):
     # sum or mean?
     cost = -T.mean(T.log(prob_y))
     accu = T.mean(T.eq(pred_label, label))
-
-    total_cost = cost + map_cost
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu
