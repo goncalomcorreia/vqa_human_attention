@@ -184,6 +184,9 @@ def train(options):
     val_learn_curve_acc = []
     val_learn_curve_err = []
 
+    train_cost_list = []
+    train_accu_list = []
+
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
@@ -208,6 +211,8 @@ def train(options):
                 val_accu_list.append(accu_val * batch_image_feat.shape[0])
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
+            ave_train_cost = sum(train_cost_list) / float(train_count)
+            ave_train_accu = sum(train_accu_list) / float(train_count)
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
@@ -216,6 +221,9 @@ def train(options):
             train_learn_curve_err.append(total_cost)
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
+            train_cost_list = []
+            train_accu_list = []
+            train_count = 0
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -242,6 +250,10 @@ def train(options):
         f_grad_cache_update()
         lr_t = get_lr(options, itr / float(num_iters_one_epoch))
         f_param_update(lr_t)
+
+        train_count += batch_image_feat.shape[0]
+        train_cost_list.append(total_cost * batch_image_feat.shape[0])
+        train_accu_list.append(accu * batch_image_feat.shape[0])
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
             data_provision_att_vqa.random_shuffle()
