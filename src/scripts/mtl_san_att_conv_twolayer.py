@@ -2,7 +2,7 @@
 
 import datetime
 import os
-os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32"
+os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
 import sys
 import logging as log
 import logging
@@ -147,7 +147,7 @@ def train(options):
                 for k, p in shared_params.iteritems()]
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
-    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, maps_grads)]
+    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
     grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
@@ -164,19 +164,20 @@ def train(options):
                               outputs = [ans_cost, accu],
                               updates = ans_update_grad,
                               on_unused_input='warn')
-    f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+    logger.info('LALALALALA')
+    f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
                               outputs = [map_cost],
                               updates = maps_update_grad,
                               on_unused_input='warn')
-
+    logger.info('LALALALALA')
     # validation function no gradient updates
     f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
                             outputs = [ans_cost, accu],
                             on_unused_input='warn')
-    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
                             outputs = [map_cost],
                             on_unused_input='warn')
-
+    logger.info('LALALALALA')
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     logger.info('finished building function')
@@ -198,9 +199,9 @@ def train(options):
 
     train_cost_list = []
     train_accu_list = []
-
+    train_count = 0
     for itr in xrange(max_iters + 1):
-        if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
+        if ((itr % eval_interval_in_iters) == 0 or (itr == max_iters)) and itr!=0:
             val_cost_list = []
             val_map_cost_list = []
             val_accu_list = []
@@ -219,7 +220,7 @@ def train(options):
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),
+                                     np.transpose(input_mask),batch_answer_label.astype('int32').flatten(),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
                 val_cost_list.append(ans_cost_val * batch_image_feat.shape[0])
@@ -262,7 +263,7 @@ def train(options):
                                np.transpose(input_mask),
                                batch_answer_label.astype('int32').flatten())
         [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
-                               np.transpose(input_mask),
+                               np.transpose(input_mask),batch_answer_label.astype('int32').flatten(),
                                batch_map_label)
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
