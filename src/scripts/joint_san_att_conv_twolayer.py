@@ -185,11 +185,13 @@ def train(options):
 
     val_learn_curve_acc = []
     val_learn_curve_err = []
+    val_learn_curve_err_map = []
 
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_accu_list = []
+            val_map_cost_list = []
             val_count = 0
             dropout.set_value(numpy.float32(0.))
             for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
