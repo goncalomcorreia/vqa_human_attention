@@ -235,9 +235,9 @@ def build_model(shared_params, options):
     input_idx = T.imatrix('input_idx')
     input_mask = T.matrix('input_mask')
     # label is the TRUE label
-    label = T.vector('label')
-    map_label = T.matrix('map_label')
 
+    map_label = T.matrix('map_label')
+    label = T.ivector('label')
     empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
                                               dtype='float32'),
                                name='empty_word')
