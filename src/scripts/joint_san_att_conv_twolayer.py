@@ -51,6 +51,8 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
+options['use_kl'] = True
+
 # dimensions
 options['n_emb'] = 500
 options['n_dim'] = 500

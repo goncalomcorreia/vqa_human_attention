@@ -51,6 +51,9 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
+options['use_kl'] = False
+options['task_p'] = 0.5
+
 # dimensions
 options['n_emb'] = 500
 options['n_dim'] = 500
@@ -114,6 +117,7 @@ def train(options):
     ###############
     params = init_params(options)
     shared_params = init_shared_params(params)
+    shared_params_maps = init_shared_params_maps(shared_params)
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
@@ -145,9 +149,11 @@ def train(options):
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                 for k, p in shared_params.iteritems()]
+    grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
+                for k, p in shared_params_maps.iteritems()]
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
-    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, map_grads)]
+    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
     grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
@@ -246,7 +252,7 @@ def train(options):
         batch_image_feat = reshape_image_feat(batch_image_feat,
                                               options['num_region'],
                                               options['region_dim'])
-        task_choice = np.random.choice(2)
+        task_choice = np.random.choice(2, p=[1-options['task_p'], options['task_p']])
         if task_choice==1:
             [ans_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
                                    np.transpose(input_mask),

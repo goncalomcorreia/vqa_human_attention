@@ -158,6 +158,15 @@ def init_shared_params(params):
 
     return shared_params
 
+def init_shared_params_maps(shared_params):
+    ''' return a shared version of shared task parameters
+    '''
+    shared_params_maps = OrderedDict()
+    for k, p in shared_params.iteritems():
+        if 'combined_mlp' not in k:
+            shared_params_maps[k] = shared_params[k]
+
+    return shared_params_maps
 
 # activation function for ff layer
 def tanh(x):
@@ -343,7 +352,10 @@ def build_model(shared_params, options):
                                             'combined_att_mlp_act', 'tanh'))
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
-    prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
+    if options['use_kl']:
+        prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
+    else:
+        prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
     map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
