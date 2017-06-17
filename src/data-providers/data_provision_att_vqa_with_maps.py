@@ -6,9 +6,9 @@ import time
 logger = logging.getLogger('root')
 
 class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
-    def __init__(self, data_folder, feature_file, maps_data_folder):
+    def __init__(self, data_folder, feature_file, maps_data_folder, rng = None):
         super(DataProvisionAttVqaWithMaps, self).__init__(
-            data_folder, feature_file
+            data_folder, feature_file, rng
         )
         self._att_maps = OrderedDict()
         self._att_maps_qids = OrderedDict()
@@ -54,6 +54,7 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
             if not (split is 'val2' or split is 'val2_all'):
                 idx = range(len(self._question[split]))
                 random.shuffle(idx)
+                idx = self.rng.permutation(len(self._question[split]))
                 self._question_id[split] = self._question_id[split][idx]
                 self._image_id[split] = self._image_id[split][idx]
                 self._question[split] = self._question[split][idx]
@@ -155,7 +156,7 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
             batch_answer = self._answer[partition][self._pointer[partition]:
                                                    self._pointer[partition]
                                                    + batch_size]
-            batch_answer_label = [random.choice(ans)for ans in batch_answer]
+            batch_answer_label = [self.rng.choice(ans)for ans in batch_answer]
             batch_answer_label = np.array(batch_answer_label)
             batch_map_label = self._map_label[partition][self._pointer[partition] :
                                                                self._pointer[partition]
@@ -186,7 +187,7 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
             batch_answer = np.append(batch_answer,
                                      self._answer[partition][:next_pointer],
                                      axis = 0)
-            batch_answer_label = [random.choice(ans)for ans in batch_answer]
+            batch_answer_label = [self.rng.choice(ans)for ans in batch_answer]
             batch_answer_label = np.array(batch_answer_label)
             batch_map_label = self._map_label[partition][self._pointer[partition]:]
             batch_map_label = np.append(batch_map_label,

@@ -15,7 +15,7 @@ from collections import OrderedDict
 logger = logging.getLogger('root')
 
 class DataProvisionAttVqa(object):
-    def __init__(self, data_folder, feature_file):
+    def __init__(self, data_folder, feature_file, rng = None):
         self._image_feat = self.load_image_feat(data_folder, feature_file)
         self._question_id = OrderedDict()
         self._image_id = OrderedDict()
@@ -28,6 +28,9 @@ class DataProvisionAttVqa(object):
         self._answer_label = OrderedDict()
         self._splits = ['train', 'val1', 'val2', 'val2_all']
         self._pointer = OrderedDict()
+        if rng is None:
+            rng = np.random.RandomState(1234)
+        self.rng = rng
         for split in self._splits:
             with open(os.path.join(data_folder, split) + '.pkl') as f:
                 split_question_id = pkl.load(f)
@@ -38,7 +41,7 @@ class DataProvisionAttVqa(object):
                 split_answer_label = pkl.load(f)
             idx = range(split_question.shape[0])
             if not (split is 'val2' or split is 'val2_all'):
-                random.shuffle(idx)
+                idx = self.rng.permutation(split_question.shape[0])
             self._question_id[split] = split_question_id[idx]
             self._image_id[split] = split_image_id[idx]
             self._question[split] = split_question[idx]
@@ -86,6 +89,7 @@ class DataProvisionAttVqa(object):
             if not (split is 'val2' or split is 'val2_all'):
                 idx = range(len(self._question[split]))
                 random.shuffle(idx)
+                idx = self.rng.permutation(len(self._question[split]))
                 self._question_id[split] = self._question_id[split][idx]
                 self._image_id[split] = self._image_id[split][idx]
                 self._question[split] = self._question[split][idx]
@@ -246,7 +250,7 @@ class DataProvisionAttVqa(object):
             batch_answer = self._answer[partition][self._pointer[partition]:
                                                    self._pointer[partition]
                                                    + batch_size]
-            batch_answer_label = [random.choice(ans)for ans in batch_answer]
+            batch_answer_label = [self.rng.choice(ans)for ans in batch_answer]
             batch_answer_label = np.array(batch_answer_label)
             # update pointer
             self._pointer[partition] = (self._pointer[partition] + batch_size) \
@@ -274,7 +278,7 @@ class DataProvisionAttVqa(object):
             batch_answer = np.append(batch_answer,
                                      self._answer[partition][:next_pointer],
                                      axis = 0)
-            batch_answer_label = [random.choice(ans)for ans in batch_answer]
+            batch_answer_label = [self.rng.choice(ans)for ans in batch_answer]
             batch_answer_label = np.array(batch_answer_label)
 
             self._pointer[partition] = next_pointer
