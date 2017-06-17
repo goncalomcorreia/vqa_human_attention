@@ -145,7 +145,7 @@ def train(options):
     # # gradients #
     ###############
     ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
-    map_grads = T.grad(map_reg_cost, wrt = shared_params.values())
+    map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                 for k, p in shared_params.iteritems()]
@@ -254,7 +254,7 @@ def train(options):
                                               options['region_dim'])
         task_choice = np.random.choice(2, p=[1-options['task_p'], options['task_p']])
         if task_choice==1:
-            [ans_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
+            [cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
                                    np.transpose(input_mask),
                                    batch_answer_label.astype('int32').flatten())
         else:
@@ -277,13 +277,13 @@ def train(options):
                 logger.info('Main Task: iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
-                               ans_cost, accu, lr_t))
+                               cost, accu, lr_t))
             else:
                 logger.info('Sub Task: iteration %d/%d epoch %f/%d map_cost %f , lr %f' \
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
                                map_cost, lr_t))
-            if np.isnan(ans_cost):
+            if np.isnan(cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'
                 logger.info('saving the debug model to %s' %(file_name))
