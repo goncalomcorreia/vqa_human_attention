@@ -370,7 +370,10 @@ def build_model(shared_params, options):
 
     # drop the image output
     prob = T.nnet.softmax(combined_hidden)
-    prob_y = prob[T.arange(prob.shape[0]), label]
+    try:
+        prob_y = prob[T.arange(prob.shape[0]), label]
+    except:
+        import pdb; pdb.set_trace()
     pred_label = T.argmax(prob, axis=1)
     # sum or mean?
     cost = -T.mean(T.log(prob_y))
