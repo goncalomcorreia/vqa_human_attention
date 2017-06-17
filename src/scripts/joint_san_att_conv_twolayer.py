@@ -24,8 +24,8 @@ options = OrderedDict()
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/subset-with-maps'
-options['model_name'] = 'maps_model'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/joint-loss-mtl'
+options['model_name'] = 'mtl_joint_loss_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -82,6 +82,7 @@ options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
 options['grad_clip'] = numpy.float32(0.1)
+options['hyper_r'] = 0.5
 
 # log params
 options['disp_interval'] = 10
@@ -117,7 +118,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, total_cost, map_label \
+        prob_attention_1, prob_attention_2, map_cost, map_label \
         = build_model(shared_params, options)
 
     logger.info('finished building model')
@@ -134,6 +135,9 @@ def train(options):
             reg_cost += (shared_params[k]**2).sum()
 
     reg_cost *= weight_decay
+
+    rr = options['hyper_r']
+    total_cost = 1/(1+rr)*cost + rr/(1+rr)*map_cost
     reg_cost = total_cost + reg_cost
 
     ###############
@@ -157,12 +161,12 @@ def train(options):
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
     f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                              outputs = [total_cost, accu],
+                              outputs = [cost, accu, map_cost],
                               updates = update_grad,
                               on_unused_input='warn')
     # validation function no gradient updates
     f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                            outputs = [total_cost, accu],
+                            outputs = [cost, accu, map_cost],
                             on_unused_input='warn')
 
     f_grad_cache_update, f_param_update \
@@ -179,13 +183,8 @@ def train(options):
     best_val_accu = 0.0
     best_param = dict()
 
-    train_learn_curve_acc = []
-    train_learn_curve_err = []
     val_learn_curve_acc = []
     val_learn_curve_err = []
-
-    train_cost_list = []
-    train_accu_list = []
 
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
@@ -202,28 +201,24 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [total_cost_val, accu_val] = f_val(batch_image_feat, np.transpose(input_idx),
+                [cost, accu, map_cost] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten(),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
-                val_cost_list.append(total_cost_val * batch_image_feat.shape[0])
-                val_accu_list.append(accu_val * batch_image_feat.shape[0])
+                val_cost_list.append(cost * batch_image_feat.shape[0])
+                val_accu_list.append(accu * batch_image_feat.shape[0])
+                val_map_cost_list.append(map_cost * batch_image_feat.shape[0])
             ave_val_cost = sum(val_cost_list) / float(val_count)
+            ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
-            ave_train_cost = sum(train_cost_list) / float(train_count)
-            ave_train_accu = sum(train_accu_list) / float(train_count)
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
-            logger.info('validation cost: %f accu: %f' %(ave_val_cost, ave_val_accu))
-            train_learn_curve_acc.append(accu)
-            train_learn_curve_err.append(total_cost)
+            logger.info('validation cost: %f accu: %f map cost: %f' %(ave_val_cost, ave_val_accu, ave_val_map_cost))
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
-            train_cost_list = []
-            train_accu_list = []
-            train_count = 0
+            val_learn_curve_err_map.append(ave_val_map_cost)
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -239,7 +234,7 @@ def train(options):
                                               options['num_region'],
                                               options['region_dim'])
 
-        [total_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
+        [cost, accu, map_cost] = f_train(batch_image_feat, np.transpose(input_idx),
                                np.transpose(input_mask),
                                batch_answer_label.astype('int32').flatten(),
                                batch_map_label)
@@ -251,19 +246,15 @@ def train(options):
         lr_t = get_lr(options, itr / float(num_iters_one_epoch))
         f_param_update(lr_t)
 
-        train_count += batch_image_feat.shape[0]
-        train_cost_list.append(total_cost * batch_image_feat.shape[0])
-        train_accu_list.append(accu * batch_image_feat.shape[0])
-
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
             data_provision_att_vqa.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
-            logger.info('iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
+            logger.info('iteration %d/%d epoch %f/%d cost %f map_cost %f accu %f, lr %f' \
                         % (itr, max_iters,
                            itr / float(num_iters_one_epoch), max_epochs,
-                           total_cost, accu, lr_t))
-            if np.isnan(total_cost):
+                           cost, map_cost, accu, lr_t))
+            if np.isnan(cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'
                 logger.info('saving the debug model to %s' %(file_name))
@@ -283,8 +274,7 @@ def train(options):
     val_learn_curve_err = np.array(val_learn_curve_err)
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
-        train_error=train_learn_curve_err,
-        train_accuracy=train_learn_curve_acc,
+        valid_error_map=val_learn_curve_err_map,
         valid_error=val_learn_curve_err,
         valid_accuracy=val_learn_curve_acc
     )

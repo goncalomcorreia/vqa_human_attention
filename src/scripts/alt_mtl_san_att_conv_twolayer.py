@@ -24,8 +24,8 @@ options = OrderedDict()
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/mtl-with-maps'
-options['model_name'] = 'mtl_model'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/alt-tasks-mtl'
+options['model_name'] = 'mtl_alt_tasks_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -92,7 +92,7 @@ def get_lr(options, curr_epoch):
     if options['optimization'] == 'sgd':
         power = max((curr_epoch - options['step_start']) / options['step'], 0)
         power = math.ceil(power)
-        return options['lr'] * (options['gamma'] ** power)  #
+        return options['lr'] * (options['gamma'] ** power)
     else:
         return options['lr']
 
@@ -135,7 +135,7 @@ def train(options):
 
     reg_cost *= weight_decay
     ans_reg_cost = ans_cost + reg_cost
-    map_reg_cost = map_cost + reg_cost
+    map_reg_cost = map_cost
 
     ###############
     # # gradients #
