@@ -5,7 +5,7 @@ import random
 import numpy as np
 import pickle as pkl
 import os
-import log
+import logging as log
 import logging
 import h5py
 import scipy.sparse
