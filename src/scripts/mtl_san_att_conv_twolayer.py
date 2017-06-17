@@ -212,16 +212,16 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [ans_cost_val, accu_val] = f_val(batch_image_feat, np.transpose(input_idx),
+                [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
-                val_cost_list.append(ans_cost_val * batch_image_feat.shape[0])
+                val_cost_list.append(cost * batch_image_feat.shape[0])
+                val_accu_list.append(accu * batch_image_feat.shape[0])
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
-                val_accu_list.append(accu_val * batch_image_feat.shape[0])
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
@@ -246,13 +246,15 @@ def train(options):
         batch_image_feat = reshape_image_feat(batch_image_feat,
                                               options['num_region'],
                                               options['region_dim'])
-
-        [ans_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
-                               np.transpose(input_mask),
-                               batch_answer_label.astype('int32').flatten())
-        [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
-                               np.transpose(input_mask),
-                               batch_map_label)
+        task_choice = np.random.choice(2)
+        if task_choice==1:
+            [ans_cost, accu] = f_train(batch_image_feat, np.transpose(input_idx),
+                                   np.transpose(input_mask),
+                                   batch_answer_label.astype('int32').flatten())
+        else:
+            [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
+                                   np.transpose(input_mask),
+                                   batch_map_label)
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
         # pdb.set_trace()
@@ -265,10 +267,16 @@ def train(options):
             data_provision_att_vqa.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
-            logger.info('iteration %d/%d epoch %f/%d cost %f map_cost %f accu %f, lr %f' \
-                        % (itr, max_iters,
-                           itr / float(num_iters_one_epoch), max_epochs,
-                           ans_cost, map_cost, accu, lr_t))
+            if task_choice==1:
+                logger.info('Main Task: iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
+                            % (itr, max_iters,
+                               itr / float(num_iters_one_epoch), max_epochs,
+                               ans_cost, accu, lr_t))
+            else:
+                logger.info('Sub Task: iteration %d/%d epoch %f/%d map_cost %f , lr %f' \
+                            % (itr, max_iters,
+                               itr / float(num_iters_one_epoch), max_epochs,
+                               map_cost, lr_t))
             if np.isnan(ans_cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'
