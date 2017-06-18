@@ -25,7 +25,7 @@ options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/alt-tasks-mtl'
-options['model_name'] = 'mtl_alt_tasks_model'
+options['model_name'] = 'reg_mtl_alt_tasks_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -137,9 +137,16 @@ def train(options):
         if k != 'w_emb':
             reg_cost += (shared_params[k]**2).sum()
 
+    reg_map = 0
+
+    for k in shared_params_maps.iterkeys():
+        if k != 'w_emb':
+            reg_cost += (shared_params_maps[k]**2).sum()
+
     reg_cost *= weight_decay
+    reg_map *= weight_decay
     ans_reg_cost = ans_cost + reg_cost
-    map_reg_cost = map_cost
+    map_reg_cost = map_cost + reg_map
 
     ###############
     # # gradients #
