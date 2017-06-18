@@ -196,6 +196,8 @@ def train(options):
 
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
+    f_grad_cache_update_maps, f_param_update_maps \
+        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
     logger.info('finished building function')
 
     # calculate how many iterations we need
@@ -291,9 +293,14 @@ def train(options):
         # logger.info(output_norm)
         # pdb.set_trace()
         f_grad_clip()
-        f_grad_cache_update()
-        lr_t = get_lr(options, itr / float(num_iters_one_epoch))
-        f_param_update(lr_t)
+        if itr / float(num_iters_one_epoch)>30:
+            f_grad_cache_update()
+            lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+            f_param_update(lr_t)
+        else:
+            f_grad_cache_update_maps()
+            lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+            f_param_update_maps(lr_t)
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
             data_provision_att_vqa.random_shuffle()

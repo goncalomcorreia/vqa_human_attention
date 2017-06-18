@@ -25,7 +25,7 @@ options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
-options['model_name'] = 'complete_mtl_alt_model'
+options['model_name'] = 'reg5e-5_adam_complete_mtl_alt_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -71,7 +71,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'sgd' # choices
+options['optimization'] = 'adam' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(0.1)
 options['w_emb_lr'] = numpy.float32(80)
@@ -80,7 +80,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
-options['weight_decay'] = 0.0005
+options['weight_decay'] = 5e-5
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -189,6 +189,8 @@ def train(options):
 
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
+    f_grad_cache_update_maps, f_param_update_maps \
+        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
     logger.info('finished building function')
 
     # calculate how many iterations we need
@@ -212,8 +214,8 @@ def train(options):
             val_accu_list = []
             val_count = 0
             dropout.set_value(numpy.float32(0.))
-            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
+            for batch_image_feat, batch_question, batch_answer_label \
+                in data_provision_att_vqa.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
@@ -224,16 +226,29 @@ def train(options):
                 [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
+                val_count += batch_image_feat.shape[0]
+                val_cost_list.append(cost * batch_image_feat.shape[0])
+                val_accu_list.append(accu * batch_image_feat.shape[0])
+
+            ave_val_cost = sum(val_cost_list) / float(val_count)
+            ave_val_cost = sum(val_cost_list) / float(val_count)
+            val_count = 0
+            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
+                                                    batch_size):
+                input_idx, input_mask \
+                    = process_batch(batch_question,
+                                    reverse=options['reverse'])
+                batch_image_feat = reshape_image_feat(batch_image_feat,
+                                                      options['num_region'],
+                                                      options['region_dim'])
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
-                val_cost_list.append(cost * batch_image_feat.shape[0])
-                val_accu_list.append(accu * batch_image_feat.shape[0])
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
-            ave_val_cost = sum(val_cost_list) / float(val_count)
+
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
-            ave_val_accu = sum(val_accu_list) / float(val_count)
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
@@ -284,9 +299,14 @@ def train(options):
         # logger.info(output_norm)
         # pdb.set_trace()
         f_grad_clip()
-        f_grad_cache_update()
-        lr_t = get_lr(options, itr / float(num_iters_one_epoch))
-        f_param_update(lr_t)
+        if task_choice==1:
+            f_grad_cache_update()
+            lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+            f_param_update(lr_t)
+        else:
+            f_grad_cache_update_maps()
+            lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+            f_param_update_maps(lr_t)
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
             data_provision_att_vqa.random_shuffle()
