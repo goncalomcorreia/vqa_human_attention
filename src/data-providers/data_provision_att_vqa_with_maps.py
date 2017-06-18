@@ -30,12 +30,12 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
         self._att_maps['val'] = np.array(aux_att_maps)
         self._map_label = OrderedDict()
         qids_with_maps = self._att_maps_qids['train'] + self._att_maps_qids['val']
-        att_maps = np.delete(att_maps,
+        # Remove human attention maps that are all zero
+        qids_with_maps = np.delete(np.array(qids_with_maps),
                              np.array(list(set(np.where(att_maps==0)[0]))),
                              axis=0)
-        qids_with_maps = np.delete(qids_with_maps,
-                             np.array(list(set(np.where(att_maps==0)[0]))),
-                             axis=0)
+        qids_with_maps = list(qids_with_maps)
+        att_maps = att_maps[~np.all(att_maps == 0, axis=1)]
         for split in self._splits:
             map_idx = np.where(np.in1d(self._question_id[split], qids_with_maps))[0]
             self._question_id[split] = self._question_id[split][map_idx]

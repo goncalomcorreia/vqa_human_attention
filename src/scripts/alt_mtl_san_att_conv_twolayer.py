@@ -79,7 +79,7 @@ options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 100
+options['max_epochs'] = 50
 options['weight_decay'] = 0.0005
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
@@ -88,7 +88,7 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 1000
+options['eval_interval'] = 500
 options['save_interval'] = 500
 
 def get_lr(options, curr_epoch):
