@@ -21,9 +21,9 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/home/s1670404/imageqa-san/data_vqa'
+options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/imageqa-san/expt/baseline'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/baseline'
 options['model_name'] = 'imageqa'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
@@ -177,6 +177,9 @@ def train(options):
     best_val_accu = 0.0
     best_param = dict()
 
+    val_learn_curve_acc = []
+    val_learn_curve_err = []
+
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
@@ -204,6 +207,8 @@ def train(options):
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
             logger.info('validation cost: %f accu: %f' %(ave_val_cost, ave_val_accu))
+            val_learn_curve_acc.append(ave_val_accu)
+            val_learn_curve_err.append(ave_val_cost)
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -252,6 +257,15 @@ def train(options):
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
+
+    val_learn_curve_acc = np.array(val_learn_curve_acc)
+    val_learn_curve_err = np.array(val_learn_curve_err)
+
+    np.savez_compressed(
+        os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
+        valid_error=val_learn_curve_err,
+        valid_accuracy=val_learn_curve_acc
+    )
 
     return best_val_accu
 
