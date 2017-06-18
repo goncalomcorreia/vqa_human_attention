@@ -231,7 +231,7 @@ def train(options):
                 val_accu_list.append(accu * batch_image_feat.shape[0])
 
             ave_val_cost = sum(val_cost_list) / float(val_count)
-            ave_val_cost = sum(val_cost_list) / float(val_count)
+            ave_val_accu = sum(val_accu_list) / float(val_count)
             val_count = 0
             for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
                 in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
