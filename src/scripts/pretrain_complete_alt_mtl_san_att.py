@@ -79,7 +79,7 @@ options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 100
+options['max_epochs'] = 75
 options['weight_decay'] = 0.0005
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
@@ -105,8 +105,8 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
-    data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
-                                                         options['feature_file'])
+    data_provision_att_vqa = DataProvisionAttVqa(options['data_path'],
+                                                 options['feature_file'])
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
@@ -253,7 +253,7 @@ def train(options):
 
         task_choice = np.random.choice(2, p=[1-options['task_p'], options['task_p']])
 
-        if itr / float(num_iters_one_epoch)>50:
+        if itr / float(num_iters_one_epoch)>30:
 
             if options['sample_answer']:
                 batch_image_feat, batch_question, batch_answer_label \
@@ -300,7 +300,7 @@ def train(options):
             data_provision_att_vqa_maps.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
-            if itr / float(num_iters_one_epoch)>50:
+            if itr / float(num_iters_one_epoch)>30:
                 logger.info('Main Task: iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
