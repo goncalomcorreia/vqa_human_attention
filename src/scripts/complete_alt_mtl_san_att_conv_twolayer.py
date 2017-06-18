@@ -105,8 +105,8 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
-    data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
-                                                         options['feature_file'])
+    data_provision_att_vqa = DataProvisionAttVqa(options['data_path'],
+                                                 options['feature_file'])
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
