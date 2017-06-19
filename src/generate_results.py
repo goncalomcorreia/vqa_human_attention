@@ -13,9 +13,14 @@ answer_dict = pickle.load(f)
 f.close()
 answer_dict = {v: k for k, v in answer_dict.iteritems()}
 
+import sys
+
+model_path = sys.argv[1]
+result_file_name = sys.argv[2]
+
 result = OrderedDict()
 
-options, params, shared_params = load_model('/home/s1670404/vqa_human_attention/expt/baseline_subset_best_0.469.model')
+options, params, shared_params = load_model(model_path)
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
@@ -51,16 +56,16 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
         batch_image_feat,
         np.transpose(input_idx),
         np.transpose(input_mask))
-
+    res =[]
     for pred in pred_label:
         ans = answer_dict[pred]
         ques_id = data_provision_att_vqa._question_id['val2'][i]
         i += 1
+        res.append({'answer': ans, 'question_id': int(ques_id)})
         result[ques_id] = ans
 
 results = [result]
 
 import json
-with open('/home/s1670404/subset_results.json', 'w') as outfile:
-    json.dump(results, outfile)
-
+with open('/home/s1670404/'+result_file_name, 'w') as outfile:
+    json.dump(res, outfile)
