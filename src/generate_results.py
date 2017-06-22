@@ -66,6 +66,13 @@ for batch_image_feat, batch_question, batch_answer_label in data_provision_att_v
 
 results = [result]
 
+
+d = results[0]
+res = []
+for key, value in d.iteritems():
+    res.append({'answer': value, 'question_id': int(key)})
+
+
 import json
 with open('/home/s1670404/'+result_file_name, 'w') as outfile:
-    json.dump(results, outfile)
+    json.dump(res, outfile)
