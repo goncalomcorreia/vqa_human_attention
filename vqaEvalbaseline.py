@@ -1,6 +1,7 @@
 import sys
 dataDir = '/home/s1670404/VQA'
 sys.path.insert(0, '%s/PythonHelperTools/vqaTools' %(dataDir))
+sys.path.insert(0, '%s/PythonEvaluationTools/' %(dataDir))
 from vqa import VQA
 from vqaEvaluation.vqaEval import VQAEval
 import json
