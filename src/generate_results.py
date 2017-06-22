@@ -7,7 +7,7 @@ from optimization_weight import *
 from san_att_conv_twolayer_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
-
+import json
 import pickle
 f = open('/home/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl', 'r')
 answer_dict = pickle.load(f)
@@ -72,7 +72,5 @@ res = []
 for key, value in d.iteritems():
     res.append({'answer': value, 'question_id': int(key)})
 
-
-import json
-with open('/home/s1670404/'+result_file_name, 'w') as outfile:
+with open('/home/s1670404/VQA/Results/'+result_file_name, 'w') as outfile:
     json.dump(res, outfile)
