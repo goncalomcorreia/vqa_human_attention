@@ -24,7 +24,7 @@ options = OrderedDict()
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/baseline'
-options['model_name'] = 'imageqa'
+options['model_name'] = '5e-5_adam_imageqa'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -67,7 +67,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'sgd' # choices
+options['optimization'] = 'adam' # sgd
 options['batch_size'] = 100
 options['lr'] = numpy.float32(0.1)
 options['w_emb_lr'] = numpy.float32(80)
@@ -76,7 +76,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
-options['weight_decay'] = 0.0005
+options['weight_decay'] = 5e-5 #5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
