@@ -25,7 +25,7 @@ options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
-options['model_name'] = 'reg5e-5_adam_complete_mtl_alt_model'
+options['model_name'] = 'ce_complete_mtl_alt_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -51,7 +51,7 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = True
+options['use_kl'] = False
 options['task_p'] = 0.5
 
 # dimensions
@@ -206,6 +206,7 @@ def train(options):
     val_learn_curve_acc = []
     val_learn_curve_err = []
     val_learn_curve_err_map = []
+    itr_lear_curve = []
 
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
@@ -214,8 +215,8 @@ def train(options):
             val_accu_list = []
             val_count = 0
             dropout.set_value(numpy.float32(0.))
-            for batch_image_feat, batch_question, batch_answer_label \
-                in data_provision_att_vqa.iterate_batch(options['val_split'],
+            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
@@ -226,28 +227,15 @@ def train(options):
                 [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
-                val_count += batch_image_feat.shape[0]
-                val_cost_list.append(cost * batch_image_feat.shape[0])
-                val_accu_list.append(accu * batch_image_feat.shape[0])
-
-            ave_val_cost = sum(val_cost_list) / float(val_count)
-            ave_val_accu = sum(val_accu_list) / float(val_count)
-            val_count = 0
-            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
-                                                    batch_size):
-                input_idx, input_mask \
-                    = process_batch(batch_question,
-                                    reverse=options['reverse'])
-                batch_image_feat = reshape_image_feat(batch_image_feat,
-                                                      options['num_region'],
-                                                      options['region_dim'])
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
+                val_cost_list.append(cost * batch_image_feat.shape[0])
+                val_accu_list.append(accu * batch_image_feat.shape[0])
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
-
+            ave_val_cost = sum(val_cost_list) / float(val_count)
+            ave_val_accu = sum(val_accu_list) / float(val_count)
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
@@ -256,6 +244,7 @@ def train(options):
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
             val_learn_curve_err_map.append(ave_val_map_cost)
+            itr_lear_curve.append(itr / float(num_iters_one_epoch))
 
         dropout.set_value(numpy.float32(1.))
 
