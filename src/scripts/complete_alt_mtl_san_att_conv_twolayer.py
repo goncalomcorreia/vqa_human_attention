@@ -219,7 +219,7 @@ def train(options):
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
 
-    if not best_val_accu:
+    if 'best_val_accu' not in locals():
         best_val_accu = 0.0
         best_param = dict()
         beggining_itr = 0
