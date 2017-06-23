@@ -274,8 +274,8 @@ def train(options):
             shared_to_cpu(shared_params, checkpoint_param)
             if itr>0:
                 previous_itr = itr - checkpoint_iter_interval
-                os.remove(options['model_name'] + '_checkpoint_' + '%.3f' %(previous_itr) + '.model')
-            file_name = options['model_name'] + '_checkpoint_' + '%.3f' %(itr) + '.model'
+                os.remove(options['model_name'] + '_checkpoint_' + '%d' %(previous_itr) + '.model')
+            file_name = options['model_name'] + '_checkpoint_' + '%d' %(itr) + '.model'
             logger.info('saving a checkpoint model to %s' %(file_name))
             save_model(os.path.join(options['checkpoint_folder'], file_name), options,
                        checkpoint_param)
