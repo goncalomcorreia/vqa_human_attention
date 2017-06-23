@@ -209,7 +209,7 @@ def train(options):
     val_learn_curve_err = []
     val_learn_curve_err_map = []
     itr_learn_curve = []
-    checkpoint_iter_interval = 5000
+    checkpoint_iter_interval = num_iters_one_epoch
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
