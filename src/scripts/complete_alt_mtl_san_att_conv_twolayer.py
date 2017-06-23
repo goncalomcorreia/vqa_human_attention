@@ -25,6 +25,7 @@ options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
+options['checkpoint_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl/checkpoints'
 options['model_name'] = 'ce_complete_mtl_alt_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
@@ -202,12 +203,13 @@ def train(options):
 
     best_val_accu = 0.0
     best_param = dict()
+    checkpoint_param = dict()
 
     val_learn_curve_acc = []
     val_learn_curve_err = []
     val_learn_curve_err_map = []
-    itr_lear_curve = []
-
+    itr_learn_curve = []
+    checkpoint_iter_interval = 5000
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
@@ -244,7 +246,14 @@ def train(options):
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
             val_learn_curve_err_map.append(ave_val_map_cost)
-            itr_lear_curve.append(itr / float(num_iters_one_epoch))
+            itr_learn_curve.append(itr / float(num_iters_one_epoch))
+
+        if (itr % checkpoint_iter_interval) == 0:
+            shared_to_cpu(shared_params, checkpoint_param)
+            file_name = options['model_name'] + '_checkpoint_' + '%.3f' %(itr) + '.model'
+            logger.info('saving a checkpoint model to %s' %(file_name))
+            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
+                       checkpoint_param)
 
         dropout.set_value(numpy.float32(1.))
 
@@ -334,7 +343,8 @@ def train(options):
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
         valid_error_map=val_learn_curve_err_map,
         valid_error=val_learn_curve_err,
-        valid_accuracy=val_learn_curve_acc
+        valid_accuracy=val_learn_curve_acc,
+        x_axis_epochs=itr_learn_curve
     )
 
     return best_val_accu
