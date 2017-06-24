@@ -25,6 +25,7 @@ options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/pretrain-complete-alt-tasks-mtl'
+options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
 options['model_name'] = 'pretrain_complete_mtl_alt_model'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
@@ -51,7 +52,7 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = True
+options['use_kl'] = False
 options['task_p'] = 0.5
 
 # dimensions
@@ -118,8 +119,26 @@ def train(options):
     ###############
     # build model #
     ###############
-    params = init_params(options)
-    shared_params = init_shared_params(params)
+    if not os.path.exists(options['checkpoint_folder']):
+        os.makedirs(options['checkpoint_folder'])
+    if len(os.listdir(options['checkpoint_folder']))>0:
+        logger.info('Checkpoint files found!')
+        logger.info('Loading checkpoint files...')
+
+        best_param = dict()
+        for check_file in os.listdir(options['checkpoint_folder']):
+            check_model_path = os.path.join(options['checkpoint_folder'], check_file)
+            if 'best' in check_file:
+                options_best, params_best, shared_params_best = load_model(check_model_path)
+                best_val_accu = float('.'.join(check_file.split('_')[-1].split('.')[0:-1]))
+                shared_to_cpu(shared_params_best, best_param)
+            elif 'checkpoint' in check_file:
+                options, params, shared_params = load_model(check_model_path)
+                beggining_itr = int(check_file.split('_')[-1].split('.')[0])
+    else:
+
+        params = init_params(options)
+        shared_params = init_shared_params(params)
     shared_params_maps = init_shared_params_maps(shared_params)
 
     image_feat, input_idx, input_mask, \
@@ -207,14 +226,19 @@ def train(options):
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
 
-    best_val_accu = 0.0
-    best_param = dict()
+    if 'best_val_accu' not in locals():
+        best_val_accu = 0.0
+        best_param = dict()
+        beggining_itr = 0
+
+    checkpoint_param = dict()
 
     val_learn_curve_acc = []
     val_learn_curve_err = []
     val_learn_curve_err_map = []
+    checkpoint_iter_interval = num_iters_one_epoch
 
-    for itr in xrange(max_iters + 1):
+    for itr in xrange(beggining_itr, max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_map_cost_list = []
@@ -263,6 +287,26 @@ def train(options):
             val_learn_curve_acc.append(ave_val_accu)
             val_learn_curve_err.append(ave_val_cost)
             val_learn_curve_err_map.append(ave_val_map_cost)
+
+        if (itr % checkpoint_iter_interval) == 0:
+            shared_to_cpu(shared_params, checkpoint_param)
+            if itr>0:
+                previous_itr = itr - checkpoint_iter_interval
+                checkpoint_model = options['model_name'] + '_checkpoint_' + '%d' %(previous_itr) + '.model'
+                if checkpoint_model in os.listdir(options['checkpoint_folder']):
+                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
+            file_name = options['model_name'] + '_checkpoint_' + '%d' %(itr) + '.model'
+            logger.info('saving a checkpoint model to %s' %(file_name))
+            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
+                       checkpoint_param)
+            for checkpoint_model in os.listdir(options['checkpoint_folder']):
+                if 'best' in checkpoint_model:
+                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
+            logger.info('best validation accu so far: %f', best_val_accu)
+            file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
+            logger.info('saving the best model so far to %s' %(file_name))
+            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
+                       best_param)
 
         dropout.set_value(numpy.float32(1.))
 
@@ -344,6 +388,11 @@ def train(options):
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
+
+    if len(os.listdir(options['checkpoint_folder']))>0:
+        logger.info('Deleting checkpoint files...')
+        for check_file in os.listdir(options['checkpoint_folder']):
+            os.remove(os.path.join(options['checkpoint_folder'], check_file))
 
     val_learn_curve_acc = np.array(val_learn_curve_acc)
     val_learn_curve_err = np.array(val_learn_curve_err)
