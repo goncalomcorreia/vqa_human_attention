@@ -330,7 +330,7 @@ def train(options):
                                                   options['num_region'],
                                                   options['region_dim'])
 
-            [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
+            [cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
                                    np.transpose(input_mask),
                                    batch_map_label)
         # output_norm = f_output_grad_norm()
@@ -360,7 +360,7 @@ def train(options):
                 logger.info('Sub Task: iteration %d/%d epoch %f/%d map_cost %f , lr %f' \
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
-                               map_cost, lr_t))
+                               cost, lr_t))
             if np.isnan(cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'
