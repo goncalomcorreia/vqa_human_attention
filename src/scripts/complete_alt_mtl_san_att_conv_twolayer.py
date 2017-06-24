@@ -275,7 +275,8 @@ def train(options):
             if itr>0:
                 previous_itr = itr - checkpoint_iter_interval
                 checkpoint_model = options['model_name'] + '_checkpoint_' + '%d' %(previous_itr) + '.model'
-                os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
+                if checkpoint_model in os.listdir(options['checkpoint_folder']):
+                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
             file_name = options['model_name'] + '_checkpoint_' + '%d' %(itr) + '.model'
             logger.info('saving a checkpoint model to %s' %(file_name))
             save_model(os.path.join(options['checkpoint_folder'], file_name), options,
