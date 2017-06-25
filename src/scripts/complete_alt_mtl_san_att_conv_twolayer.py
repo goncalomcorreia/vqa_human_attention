@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'ce_complete_mtl_alt_model'
+options['model_name'] = 'mtl_p_0.75'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -53,7 +53,7 @@ options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
-options['task_p'] = 0.5
+options['task_p'] = 0.75
 
 # dimensions
 options['n_emb'] = 500
@@ -72,7 +72,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'adam' # choices
+options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(0.1)
 options['w_emb_lr'] = numpy.float32(80)
@@ -81,7 +81,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
-options['weight_decay'] = 5e-5
+options['weight_decay'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
