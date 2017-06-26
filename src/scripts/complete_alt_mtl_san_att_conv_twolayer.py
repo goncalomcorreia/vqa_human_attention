@@ -138,10 +138,10 @@ def train(options):
         plot_details_path = os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz')
 
         with np.load(plot_details_path) as data:
-            val_learn_curve_acc = data['valid_accuracy']
-            val_learn_curve_err = data['valid_error']
-            val_learn_curve_err_map = data['valid_error_map']
-            itr_learn_curve = data['x_axis_epochs']
+            val_learn_curve_acc = list(data['valid_accuracy'])
+            val_learn_curve_err = list(data['valid_error'])
+            val_learn_curve_err_map = list(data['valid_error_map'])
+            itr_learn_curve = list(data['x_axis_epochs'])
 
     else:
 
