@@ -138,10 +138,10 @@ def train(options):
         plot_details_path = os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz')
 
         with np.load(plot_details_path) as data:
-            val_learn_curve_acc = list(data['valid_accuracy'])
-            val_learn_curve_err = list(data['valid_error'])
-            val_learn_curve_err_map = list(data['valid_error_map'])
-            itr_learn_curve = list(data['x_axis_epochs'])
+            val_learn_curve_acc = data['valid_accuracy']
+            val_learn_curve_err = data['valid_error']
+            val_learn_curve_err_map = data['valid_error_map']
+            itr_learn_curve = data['x_axis_epochs']
 
     else:
 
@@ -232,10 +232,10 @@ def train(options):
         best_val_accu = 0.0
         best_param = dict()
         beggining_itr = 0
-        val_learn_curve_acc = []
-        val_learn_curve_err = []
-        val_learn_curve_err_map = []
-        itr_learn_curve = []
+        val_learn_curve_acc = np.array([])
+        val_learn_curve_err = np.array([])
+        val_learn_curve_err_map = np.array([])
+        itr_learn_curve = np.array([])
 
     checkpoint_param = dict()
     checkpoint_iter_interval = num_iters_one_epoch
@@ -273,10 +273,10 @@ def train(options):
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
             logger.info('validation cost: %f accu: %f map cost: %f' %(ave_val_cost, ave_val_accu, ave_val_map_cost))
-            val_learn_curve_acc.append(ave_val_accu)
-            val_learn_curve_err.append(ave_val_cost)
-            val_learn_curve_err_map.append(ave_val_map_cost)
-            itr_learn_curve.append(itr / float(num_iters_one_epoch))
+            val_learn_curve_acc = np.append(val_learn_curve_acc, ave_val_accu)
+            val_learn_curve_err = np.append(val_learn_curve_err, ave_val_cost)
+            val_learn_curve_err_map = np.append(val_learn_curve_err_map, ave_val_map_cost)
+            itr_learn_curve = np.append(itr_learn_curve, itr / float(num_iters_one_epoch))
 
         if (itr % checkpoint_iter_interval) == 0:
             shared_to_cpu(shared_params, checkpoint_param)
@@ -297,10 +297,6 @@ def train(options):
             logger.info('saving the best model so far to %s' %(file_name))
             save_model(os.path.join(options['checkpoint_folder'], file_name), options,
                        best_param)
-            val_learn_curve_acc = np.array(val_learn_curve_acc)
-            val_learn_curve_err = np.array(val_learn_curve_err)
-            val_learn_curve_err_map = np.array(val_learn_curve_err_map)
-            itr_learn_curve = np.array(itr_learn_curve)
             np.savez_compressed(
                 os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz'),
                 valid_error_map=val_learn_curve_err_map,
@@ -396,9 +392,6 @@ def train(options):
         for check_file in os.listdir(options['checkpoint_folder']):
             os.remove(os.path.join(options['checkpoint_folder'], check_file))
 
-    val_learn_curve_acc = np.array(val_learn_curve_acc)
-    val_learn_curve_err = np.array(val_learn_curve_err)
-    val_learn_curve_err_map = np.array(val_learn_curve_err_map)
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
         valid_error_map=val_learn_curve_err_map,
