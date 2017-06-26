@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'mtl_p_0.75'
+options['model_name'] = 'mtl_p_0.5_2'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -53,7 +53,7 @@ options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
-options['task_p'] = 0.75
+options['task_p'] = 0.5
 
 # dimensions
 options['n_emb'] = 500
@@ -134,6 +134,15 @@ def train(options):
             elif 'checkpoint' in check_file:
                 options, params, shared_params = load_model(check_model_path)
                 beggining_itr = int(check_file.split('_')[-1].split('.')[0])
+
+        plot_details_path = os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz')
+
+        with np.load(plot_details_path) as data:
+            val_learn_curve_acc = data['valid_accuracy']
+            val_learn_curve_err = data['valid_error']
+            val_learn_curve_err_map = data['valid_error_map']
+            itr_learn_curve = data['x_axis_epochs']
+
     else:
 
         params = init_params(options)
@@ -223,13 +232,12 @@ def train(options):
         best_val_accu = 0.0
         best_param = dict()
         beggining_itr = 0
+        val_learn_curve_acc = []
+        val_learn_curve_err = []
+        val_learn_curve_err_map = []
+        itr_learn_curve = []
 
     checkpoint_param = dict()
-
-    val_learn_curve_acc = []
-    val_learn_curve_err = []
-    val_learn_curve_err_map = []
-    itr_learn_curve = []
     checkpoint_iter_interval = num_iters_one_epoch
 
     for itr in xrange(beggining_itr, max_iters + 1):
@@ -289,6 +297,17 @@ def train(options):
             logger.info('saving the best model so far to %s' %(file_name))
             save_model(os.path.join(options['checkpoint_folder'], file_name), options,
                        best_param)
+            val_learn_curve_acc = np.array(val_learn_curve_acc)
+            val_learn_curve_err = np.array(val_learn_curve_err)
+            val_learn_curve_err_map = np.array(val_learn_curve_err_map)
+            itr_learn_curve = np.array(itr_learn_curve)
+            np.savez_compressed(
+                os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz'),
+                valid_error_map=val_learn_curve_err_map,
+                valid_error=val_learn_curve_err,
+                valid_accuracy=val_learn_curve_acc,
+                x_axis_epochs=itr_learn_curve
+            )
 
         dropout.set_value(numpy.float32(1.))
 
@@ -356,13 +375,14 @@ def train(options):
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
                                map_cost, lr_t))
-            if np.isnan(cost):
-                logger.info('nan detected')
-                file_name = options['model_name'] + '_nan_debug.model'
-                logger.info('saving the debug model to %s' %(file_name))
-                save_model(os.path.join(options['expt_folder'], file_name), options,
-                           best_param)
-                return 0
+            if 'cost' in locals():
+                if np.isnan(cost):
+                    logger.info('nan detected')
+                    file_name = options['model_name'] + '_nan_debug.model'
+                    logger.info('saving the debug model to %s' %(file_name))
+                    save_model(os.path.join(options['expt_folder'], file_name), options,
+                               best_param)
+                    return 0
 
 
     logger.info('best validation accu: %f', best_val_accu)
