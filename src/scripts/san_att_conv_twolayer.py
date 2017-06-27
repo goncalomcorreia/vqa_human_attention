@@ -14,7 +14,7 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
-from data_provision_att_vqa import DataProvisionAttVqa
+from data_provision_att_vqa_test import DataProvisionAttVqaTest
 from data_processing_vqa import *
 
 ##################
@@ -114,7 +114,7 @@ def train(options):
                                                      n_shuffles=n_shuffles,
                                                      state=state)
     else:
-        data_provision_att_vqa = DataProvisionAttVqa(options['data_path'],
+        data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
                                                      options['feature_file'])
 
     batch_size = options['batch_size']
