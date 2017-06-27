@@ -119,7 +119,8 @@ def train(options):
     ###############
     # build model #
     ###############
-
+    if not os.path.exists(options['checkpoint_folder']):
+        os.makedirs(options['checkpoint_folder'])
     if len(os.listdir(options['checkpoint_folder']))>0:
         logger.info('Checkpoint files found!')
         logger.info('Loading checkpoint files...')

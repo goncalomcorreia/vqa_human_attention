@@ -18,11 +18,14 @@ while i<len(sys.argv):
 acc_valid = []
 err_valid = []
 err_map_valid = []
+x_axis = []
 
 for array_path in arrays_path:
     with np.load(array_path) as data:
         err_valid.append(data['valid_error'])
         acc_valid.append(data['valid_accuracy'])
+        x_axis.append(data['x_axis_epochs'])
+        #TODO: do this only if it exists
         err_map_valid.append(data['valid_error_map'])
 
 fig = plt.figure(figsize=(5, 7))
@@ -33,9 +36,9 @@ ax3 = fig.add_subplot(3, 1, 3)
 
 
 for i in xrange(len(arrays_path)):
-    ax1.plot(err_valid[i], label=legend[i])
-    ax2.plot(acc_valid[i], label=legend[i])
-    ax3.plot(err_map_valid[i], label=legend[i])
+    ax1.plot(x_axis[i], err_valid[i], label=legend[i])
+    ax2.plot(x_axis[i], acc_valid[i], label=legend[i])
+    ax3.plot(x_axis[i], err_map_valid[i], label=legend[i])
 
 ax1.legend(loc=0)
 ax1.set_xlabel('Epoch number')

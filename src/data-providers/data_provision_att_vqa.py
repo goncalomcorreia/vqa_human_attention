@@ -15,7 +15,7 @@ from collections import OrderedDict
 logger = logging.getLogger('root')
 
 class DataProvisionAttVqa(object):
-    def __init__(self, data_folder, feature_file, rng = None):
+    def __init__(self, data_folder, feature_file, rng = None, state = None, n_shuffles = None):
         self._image_feat = self.load_image_feat(data_folder, feature_file)
         self._question_id = OrderedDict()
         self._image_id = OrderedDict()
@@ -72,7 +72,17 @@ class DataProvisionAttVqa(object):
                              axis = 0)
         self._pointer['trainval1'] = 0
 
+        if n_shuffles is not None:
+            for i in xrange(n_shuffles):
+                self.random_shuffle()
+
+        if state is not None:
+            self.rng.set_state(state)
+
         logger.info('finished loading data')
+
+    def get_random_curr_state(self):
+        return self.rng.get_state()
 
     def load_image_feat(self, data_path, h5_file):
         image_h5 = h5py.File(os.path.join(data_path, h5_file), 'r')
