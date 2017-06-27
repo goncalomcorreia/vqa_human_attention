@@ -103,6 +103,9 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
+    if not os.path.exists(options['checkpoint_folder']):
+        os.makedirs(options['checkpoint_folder'])
+
     if len(os.listdir(options['checkpoint_folder']))>0:
         n_shuffles = pickle.load(open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "rb" ))
         state = pickle.load(open(os.path.join(options['checkpoint_folder'], 'state.p'), "rb" ))
@@ -120,8 +123,6 @@ def train(options):
     ###############
     # build model #
     ###############
-    if not os.path.exists(options['checkpoint_folder']):
-        os.makedirs(options['checkpoint_folder'])
 
     if len(os.listdir(options['checkpoint_folder']))>0:
         logger.info('Checkpoint files found!')
