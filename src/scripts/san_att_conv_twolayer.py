@@ -69,7 +69,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'adam' # sgd
+options['optimization'] = 'sgd' # sgd
 options['batch_size'] = 100
 options['lr'] = numpy.float32(0.1)
 options['w_emb_lr'] = numpy.float32(80)
@@ -78,7 +78,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
-options['weight_decay'] = 5e-5 #5e-4
+options['weight_decay'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -285,7 +285,7 @@ def train(options):
             )
 
             n_shuffles = int(itr / float(num_iters_one_epoch))-1
-            state = data_provision_att_vqa.get_random_curr_state()
+            state = data_provision_att_vqa.rng.get_state()
 
             for checkpoint_file in os.listdir(options['checkpoint_folder']):
                 if 'shuffles' in checkpoint_file or 'state' in checkpoint_file:
