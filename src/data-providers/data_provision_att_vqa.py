@@ -5,7 +5,6 @@ import random
 import numpy as np
 import pickle as pkl
 import os
-import log
 import logging
 import h5py
 import scipy.sparse
@@ -81,9 +80,6 @@ class DataProvisionAttVqa(object):
 
         logger.info('finished loading data')
 
-    def get_random_curr_state(self):
-        return self.rng.get_state()
-
     def load_image_feat(self, data_path, h5_file):
         image_h5 = h5py.File(os.path.join(data_path, h5_file), 'r')
         shape = image_h5['shape']
@@ -93,6 +89,9 @@ class DataProvisionAttVqa(object):
         return scipy.sparse.csr_matrix((data, col_idx, count_idx),
                                        dtype='float32',
                                        shape=(shape[0], shape[1]))
+
+    def get_random_curr_state(self):
+        return self.rng.get_state()
 
     def random_shuffle(self):
         for split in self._splits:
