@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 
-from data_provision_att_vqa import *
+from data_provision_att_vqa_test import *
 import time
 
 logger = logging.getLogger('root')
 
-class DataProvisionAttVqaWithMaps(DataProvisionAttVqa):
+class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
     def __init__(self, data_folder, feature_file, maps_data_folder, rng = None, state = None, n_shuffles = None):
         self._image_feat = self.load_image_feat(data_folder, feature_file)
         self._question_id = OrderedDict()
