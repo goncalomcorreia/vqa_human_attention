@@ -339,7 +339,6 @@ def train(options):
 
             pickle.dump(n_shuffles, open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "wb" ))
             pickle.dump(state, open(os.path.join(options['checkpoint_folder'], 'state.p'), "wb" ))
-            )
 
         dropout.set_value(numpy.float32(1.))
 
