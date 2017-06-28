@@ -5,7 +5,7 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
-from data_provision_att_vqa import *
+from data_provision_att_vqa_test import *
 from data_processing_vqa import *
 import json
 import pickle
@@ -36,7 +36,7 @@ f_pass = theano.function(
     outputs=[pred_label],
     on_unused_input='warn')
 
-data_provision_att_vqa = DataProvisionAttVqa(
+data_provision_att_vqa = DataProvisionAttVqaTest(
     options['data_path'], options['feature_file'])
 
 val_cost_list = []
