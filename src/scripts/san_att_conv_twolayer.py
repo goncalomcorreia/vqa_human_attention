@@ -225,7 +225,7 @@ def train(options):
     checkpoint_param = dict()
     checkpoint_iter_interval = num_iters_one_epoch
 
-    for itr in xrange(max_iters + 1):
+    for itr in xrange(beggining_itr, max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_accu_list = []
