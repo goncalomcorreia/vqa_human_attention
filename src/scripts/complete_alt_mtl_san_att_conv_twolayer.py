@@ -260,6 +260,10 @@ def train(options):
     checkpoint_param = dict()
     checkpoint_iter_interval = num_iters_one_epoch
 
+    # Make sure always using the same random seed
+    logger.info("Picked a seed!")
+    rng = np.random.RandomState(1234)
+
     for itr in xrange(beggining_itr, max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
@@ -342,7 +346,7 @@ def train(options):
 
         dropout.set_value(numpy.float32(1.))
 
-        task_choice = np.random.choice(2, p=[1-options['task_p'], options['task_p']])
+        task_choice = rng.choice(2, p=[1-options['task_p'], options['task_p']])
 
         if task_choice==1:
 
