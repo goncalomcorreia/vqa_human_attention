@@ -324,6 +324,7 @@ def train(options):
             train_learn_curve_acc = np.append(train_learn_curve_acc, accu)
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
+            logger.info("Everyday I'm shuffling!")
             data_provision_att_vqa.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
