@@ -109,7 +109,7 @@ def train(options):
     if len(os.listdir(options['checkpoint_folder']))>0:
         n_shuffles = pickle.load(open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "rb" ))
         state = pickle.load(open(os.path.join(options['checkpoint_folder'], 'state.p'), "rb" ))
-        data_provision_att_vqa = DataProvisionAttVqa(options['data_path'],
+        data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
                                                      options['feature_file'],
                                                      n_shuffles=n_shuffles,
                                                      state=state)
