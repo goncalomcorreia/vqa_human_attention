@@ -4,13 +4,13 @@ import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
 import sys
-import logging as log
 import logging
 import argparse
 import math
 sys.path.append('/home/s1670404/vqa_human_attention/src/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
+import log
 from optimization_weight import *
 from maps_san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
