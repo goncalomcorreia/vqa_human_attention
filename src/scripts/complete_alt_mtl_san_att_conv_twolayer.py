@@ -188,6 +188,12 @@ def train(options):
         if k != 'w_emb':
             reg_cost += (shared_params[k]**2).sum()
 
+    reg_map = 0
+
+    for k in shared_params_maps.iterkeys():
+        if k != 'w_emb':
+            reg_cost += (shared_params_maps[k]**2).sum()
+
     reg_cost *= weight_decay
     ans_reg_cost = ans_cost + reg_cost
     map_reg_cost = map_cost
@@ -198,10 +204,15 @@ def train(options):
     ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
     map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
-    grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params.iteritems()]
     grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params_maps.iteritems()]
+                     for k, p in shared_params_maps.iteritems()]
+    grad_buf = []
+    for elem in grad_buf_maps:
+        grad_buf.append(elem)
+    for k, p in shared_params.iteritems():
+        if 'combined_mlp' in k:
+            grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
+
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
     maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
@@ -212,11 +223,20 @@ def train(options):
                                   g_b*grad_clip/g_norm, g_b))
                    for (g_norm, g_b) in zip(grad_norm, grad_buf)]
 
+    grad_norm_maps = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf_maps]
+    update_clip_maps = [(g_b, T.switch(T.gt(g_norm, grad_clip),
+                                  g_b*grad_clip/g_norm, g_b))
+                   for (g_norm, g_b) in zip(grad_norm_maps, grad_buf_maps)]
+
     # corresponding update function
     f_grad_clip = theano.function(inputs = [],
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
+    f_grad_clip_subtask = theano.function(inputs = [],
+                                  updates = update_clip_maps)
+    f_output_grad_norm_subtask = theano.function(inputs = [],
+                                         outputs = grad_norm_maps)
     f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
                               outputs = [ans_cost, accu],
                               updates = ans_update_grad,
@@ -390,12 +410,13 @@ def train(options):
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
         # pdb.set_trace()
-        f_grad_clip()
         if task_choice==1:
+            f_grad_clip()
             f_grad_cache_update()
             lr_t = get_lr(options, itr / float(num_iters_one_epoch))
             f_param_update(lr_t)
         else:
+            f_grad_clip_subtask()
             f_grad_cache_update_maps()
             lr_t = get_lr(options, itr / float(num_iters_one_epoch))
             f_param_update_maps(lr_t)
