@@ -145,7 +145,7 @@ def train(options):
             val_learn_curve_err = data['valid_error']
             itr_learn_curve = data['x_axis_epochs']
             train_learn_curve_err = data['train_error']
-            train_learn_curve_err = data['train_accuracy']
+            train_learn_curve_acc = data['train_accuracy']
 
     else:
         params = init_params(options)
