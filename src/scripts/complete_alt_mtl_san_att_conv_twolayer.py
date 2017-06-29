@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'mtl_p_0.5_ce_test_grads'
+options['model_name'] = 'mtl_p_0.25_ce_adam'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -53,7 +53,7 @@ options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
-options['task_p'] = 0.5
+options['task_p'] = 0.25
 
 # dimensions
 options['n_emb'] = 500
@@ -193,7 +193,7 @@ def train(options):
     for k in shared_params_maps.iterkeys():
         if k != 'w_emb':
             reg_cost += (shared_params_maps[k]**2).sum()
-    
+
     logger.info(shared_params_maps)
     reg_cost *= weight_decay
     ans_reg_cost = ans_cost + reg_cost
@@ -259,7 +259,7 @@ def train(options):
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     f_grad_cache_update_maps, f_param_update_maps \
-        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
+        = eval('adam')(shared_params_maps, grad_buf_maps, options)
     logger.info('finished building function')
 
     # calculate how many iterations we need

@@ -33,11 +33,11 @@ for array_path in arrays_path:
         x_axis_valid.append(data['x_axis_epochs'])
         #TODO: do this only if it exists
         err_map_valid.append(data['valid_error_map'])
-        err_map_train.append(data['train_error_map'])
-        x_axis_sub_train.append(data['sub_x_axis'])
-        x_axis_main_train.append(data['main_x_axis'])
-        err_train.append(data['train_error'])
-        acc_train.append(data['train_accuracy'])
+        # err_map_train.append(data['train_error_map'])
+        # x_axis_sub_train.append(data['sub_x_axis'])
+        # x_axis_main_train.append(data['main_x_axis'])
+        # err_train.append(data['train_error'])
+        # acc_train.append(data['train_accuracy'])
 
 fig = plt.figure(figsize=(5, 7))
 
@@ -47,10 +47,12 @@ ax3 = fig.add_subplot(3, 1, 3)
 
 
 for i in xrange(len(arrays_path)):
-    ax1.plot(x_axis_valid[i], err_valid[i], label=legend[i])
-    ax2.plot(x_axis_valid[i], acc_valid[i], label=legend[i])
-    ax3.plot(x_axis_valid[i], err_map_valid[i], label=legend[i])
-    ax3.plot(x_axis_sub_train[i], err_map_train[i], label='Train')
+    ax1.plot(x_axis_valid[i], err_valid[i], label="Val "+legend[i])
+    #ax1.plot(x_axis_main_train[i], err_train[i], label='Train '+legend[i])
+    ax2.plot(x_axis_valid[i], acc_valid[i], label="Val "+legend[i])
+    #ax2.plot(x_axis_main_train[i], acc_train[i], label='Train '+legend[i])
+    ax3.plot(x_axis_valid[i], err_map_valid[i], label="Val "+legend[i])
+    #ax3.plot(x_axis_sub_train[i], err_map_train[i], label='Train '+legend[i])
 
 ax1.legend(loc=0)
 ax1.set_xlabel('Epoch number')
