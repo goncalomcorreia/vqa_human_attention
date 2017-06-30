@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'mtl_p_0.5_kl'
+options['model_name'] = 'mtl_p_0.25_ce_more_reg'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -53,7 +53,7 @@ options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
-options['task_p'] = 0.5
+options['task_p'] = 0.25
 
 # dimensions
 options['n_emb'] = 500
@@ -83,6 +83,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
 options['weight_decay'] = 5e-4
+options['weight_decay_sub'] = 5e-2
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -182,6 +183,9 @@ def train(options):
     ####################
     weight_decay = theano.shared(numpy.float32(options['weight_decay']),\
                                  name = 'weight_decay')
+    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
+                                 name = 'weight_decay_sub')
+
     reg_cost = 0
 
     for k in shared_params.iterkeys():
@@ -194,8 +198,9 @@ def train(options):
         if k != 'w_emb':
             reg_cost += (shared_params_maps[k]**2).sum()
 
-    logger.info(shared_params_maps)
     reg_cost *= weight_decay
+    reg_map *= weight_decay_sub
+
     ans_reg_cost = ans_cost + reg_cost
     map_reg_cost = map_cost + reg_map
 
