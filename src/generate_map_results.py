@@ -40,7 +40,7 @@ data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
 
 dropout.set_value(numpy.float32(0.))
 
-res =np.append([])
+res = np.array([])
 
 for batch_image_feat, batch_question, batch_answer_label, batch_map_label in data_provision_att_vqa.iterate_batch(
         options['val_split'], options['batch_size']):
