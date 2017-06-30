@@ -17,7 +17,6 @@ import numpy as np
 import sys
 
 model_path = sys.argv[1]
-result_file_name = sys.argv[2]
 
 result = OrderedDict()
 
@@ -31,7 +30,7 @@ prob_attention_1, prob_attention_2 = build_model(
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 
 f_pass = theano.function(inputs = [image_feat, input_idx, input_mask],
-                        outputs = [prob_attention_1],
+                        outputs = [prob_attention_2],
                         on_unused_input='warn')
 
 data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
@@ -51,10 +50,10 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
                                           options['num_region'],
                                           options['region_dim'])
 
-    [prob_attention_1] = f_pass(batch_image_feat, np.transpose(input_idx),
+    [prob_attention_2] = f_pass(batch_image_feat, np.transpose(input_idx),
                          np.transpose(input_mask))
 
-    cross_ent = -np.sum(np.log(prob_attention_1)*batch_map_label, axis=0)
+    cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
     res = np.append(res, np.mean(cross_ent))
 
 print "Cross Entropy of validation: "+str(np.mean(res))
