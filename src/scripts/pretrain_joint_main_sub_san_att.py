@@ -12,7 +12,7 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
 from optimization_weight import *
-from maps_san_att_conv_twolayer_theano import *
+from joint_mtl_san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
