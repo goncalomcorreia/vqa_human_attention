@@ -178,6 +178,10 @@ def train(options):
     ####################
     weight_decay = theano.shared(numpy.float32(options['weight_decay']),\
                                  name = 'weight_decay')
+
+    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
+                                 name = 'weight_decay_sub')
+
     reg_cost = 0
 
     for k in shared_params.iterkeys():
