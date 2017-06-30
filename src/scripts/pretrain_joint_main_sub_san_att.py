@@ -167,7 +167,7 @@ def train(options):
     shared_params_maps = init_shared_params_maps(shared_params)
 
     image_feat, input_idx, input_mask, \
-        label, dropout, cost, accu, pred_label, \
+        label, dropout, ans_cost, accu, pred_label, \
         prob_attention_1, prob_attention_2, map_cost, map_label, total_cost = build_model(shared_params, options)
 
     logger.info('finished building model')
