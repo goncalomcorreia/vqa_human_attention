@@ -316,6 +316,8 @@ def train(options):
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
+
+            ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             val_count = 0
             for batch_image_feat, batch_question, batch_answer_label \
                 in data_provision_att_vqa.iterate_batch(options['val_split'],
@@ -335,7 +337,7 @@ def train(options):
 
             ave_val_cost = sum(val_cost_list) / float(val_count)
             ave_val_accu = sum(val_accu_list) / float(val_count)
-            ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
+
             if best_val_accu < ave_val_accu:
                 best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
