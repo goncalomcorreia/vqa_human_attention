@@ -54,7 +54,7 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
     [prob_attention_2] = f_pass(batch_image_feat, np.transpose(input_idx),
                          np.transpose(input_mask))
 
-    cross_ent = -np.sum(np.log(prob_attention_2)*map_label, axis=0)
+    cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
     res = np.append(res, np.mean(cross_ent))
 
 print "Cross Entropy of validation: "+str(np.mean(res))
