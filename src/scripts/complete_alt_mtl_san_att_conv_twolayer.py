@@ -302,8 +302,8 @@ def train(options):
             val_accu_list = []
             val_count = 0
             dropout.set_value(numpy.float32(0.))
-            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
+            for batch_image_feat, batch_question, batch_answer_label \
+                in data_provision_att_vqa.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
@@ -314,9 +314,6 @@ def train(options):
                 [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_answer_label.astype('int32').flatten())
-                [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),
-                                     batch_map_label)
                 val_count += batch_image_feat.shape[0]
                 val_cost_list.append(cost * batch_image_feat.shape[0])
                 val_accu_list.append(accu * batch_image_feat.shape[0])
