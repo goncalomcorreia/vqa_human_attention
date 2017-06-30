@@ -237,8 +237,8 @@ def train(options):
     f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
                             outputs = [ans_cost, accu],
                             on_unused_input='warn')
-    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                            outputs = [total_cost],
+    f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+                            outputs = [map_cost],
                             on_unused_input='warn')
 
     f_grad_cache_update, f_param_update \
