@@ -28,6 +28,8 @@ dropout, cost, accu, pred_label, \
 prob_attention_1, prob_attention_2 = build_model(
     shared_params, options)
 
+options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+
 f_pass = theano.function(inputs = [image_feat, input_idx, input_mask],
                         outputs = [prob_attention_2],
                         on_unused_input='warn')
