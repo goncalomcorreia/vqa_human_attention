@@ -217,7 +217,7 @@ def train(options):
     for elem in grad_buf_maps:
         grad_buf.append(elem)
     for k, p in shared_params.iteritems():
-        if 'combined_mlp' in k:
+        if k not in shared_params.keys():
             grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
 
     # accumulate the gradients within one batch
