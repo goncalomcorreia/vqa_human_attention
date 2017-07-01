@@ -110,9 +110,13 @@ def train(options):
     if not os.path.exists(options['checkpoint_folder']):
         os.makedirs(options['checkpoint_folder'])
 
-    if len(os.listdir(options['checkpoint_folder']))>0:
-        n_shuffles = pickle.load(open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "rb" ))
-        state = pickle.load(open(os.path.join(options['checkpoint_folder'], 'state.p'), "rb" ))
+    checkpoint_model_path = os.path.join(options['checkpoint_folder'], options['model_name'])
+    if not os.path.exists(checkpoint_model_path):
+        os.makedirs(checkpoint_model_path)
+
+    if len(os.listdir(checkpoint_model_path))>0:
+        n_shuffles = pickle.load(open(os.path.join(checkpoint_model_path, 'n_shuffles.p'), "rb" ))
+        state = pickle.load(open(os.path.join(checkpoint_model_path, 'state.p'), "rb" ))
         data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
                                                      options['feature_file'],
                                                      n_shuffles=n_shuffles,
@@ -135,12 +139,12 @@ def train(options):
     ###############
     # build model #
     ###############
-    if len(os.listdir(options['checkpoint_folder']))>0:
+    if len(os.listdir(checkpoint_model_path))>0:
         logger.info('Checkpoint files found!')
         logger.info('Loading checkpoint files...')
         best_param = dict()
-        for check_file in os.listdir(options['checkpoint_folder']):
-            check_model_path = os.path.join(options['checkpoint_folder'], check_file)
+        for check_file in os.listdir(checkpoint_model_path):
+            check_model_path = os.path.join(checkpoint_model_path, check_file)
             if 'best' in check_file:
                 options_best, params_best, shared_params_best = load_model(check_model_path)
                 best_val_accu = float('.'.join(check_file.split('_')[-1].split('.')[0:-1]))
@@ -149,7 +153,7 @@ def train(options):
                 options, params, shared_params = load_model(check_model_path)
                 beggining_itr = int(check_file.split('_')[-1].split('.')[0])
 
-        plot_details_path = os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz')
+        plot_details_path = os.path.join(checkpoint_model_path, options['model_name']+'_plot_details.npz')
 
         with np.load(plot_details_path) as data:
             val_learn_curve_acc = data['valid_accuracy']
@@ -202,15 +206,14 @@ def train(options):
     # # gradients #
     ###############
     ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
-    map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
+    map_grads = T.grad(map_reg_cost, wrt = shared_params.values())
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                 for k, p in shared_params.iteritems()]
-    grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params_maps.iteritems()]
+
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
-    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
+    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
     grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
@@ -244,7 +247,7 @@ def train(options):
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     f_grad_cache_update_maps, f_param_update_maps \
-        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
+        = eval(options['optimization'])(shared_params, grad_buf, options)
     logger.info('finished building function')
 
     # calculate how many iterations we need
@@ -328,22 +331,22 @@ def train(options):
             if itr>0:
                 previous_itr = itr - checkpoint_iter_interval
                 checkpoint_model = options['model_name'] + '_checkpoint_' + '%d' %(previous_itr) + '.model'
-                if checkpoint_model in os.listdir(options['checkpoint_folder']):
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
+                if checkpoint_model in os.listdir(checkpoint_model_path):
+                    os.remove(os.path.join(checkpoint_model_path, checkpoint_model))
             file_name = options['model_name'] + '_checkpoint_' + '%d' %(itr) + '.model'
             logger.info('saving a checkpoint model to %s' %(file_name))
-            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
+            save_model(os.path.join(checkpoint_model_path, file_name), options,
                        checkpoint_param)
-            for checkpoint_model in os.listdir(options['checkpoint_folder']):
+            for checkpoint_model in os.listdir(checkpoint_model_path):
                 if 'best' in checkpoint_model:
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
+                    os.remove(os.path.join(checkpoint_model_path, checkpoint_model))
             logger.info('best validation accu so far: %f', best_val_accu)
             file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
             logger.info('saving the best model so far to %s' %(file_name))
-            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
+            save_model(os.path.join(checkpoint_model_path, file_name), options,
                        best_param)
             np.savez_compressed(
-                os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz'),
+                os.path.join(checkpoint_model_path, options['model_name']+'_plot_details.npz'),
                 valid_error_map=val_learn_curve_err_map,
                 valid_error=val_learn_curve_err,
                 valid_accuracy=val_learn_curve_acc,
@@ -358,12 +361,12 @@ def train(options):
             n_shuffles = int(itr / float(num_iters_one_epoch))-1
             state = data_provision_att_vqa.rng.get_state()
 
-            for checkpoint_file in os.listdir(options['checkpoint_folder']):
+            for checkpoint_file in os.listdir(checkpoint_model_path):
                 if 'shuffles' in checkpoint_file or 'state' in checkpoint_file:
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_file))
+                    os.remove(os.path.join(checkpoint_model_path, checkpoint_file))
 
-            pickle.dump(n_shuffles, open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "wb" ))
-            pickle.dump(state, open(os.path.join(options['checkpoint_folder'], 'state.p'), "wb" ))
+            pickle.dump(n_shuffles, open(os.path.join(checkpoint_model_path, 'n_shuffles.p'), "wb" ))
+            pickle.dump(state, open(os.path.join(checkpoint_model_path, 'state.p'), "wb" ))
 
         dropout.set_value(numpy.float32(1.))
 
@@ -454,7 +457,7 @@ def train(options):
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
 
-    if len(os.listdir(options['checkpoint_folder']))>0:
+    if len(os.listdir(checkpoint_model_path))>0:
         logger.info('Deleting checkpoint files...')
         for check_file in os.listdir(options['checkpoint_folder']):
             os.remove(os.path.join(options['checkpoint_folder'], check_file))
