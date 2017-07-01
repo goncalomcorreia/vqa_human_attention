@@ -53,7 +53,8 @@ options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
-options['task_p'] = 0.25
+options['task_p'] = 0.5
+options['use_second_att_layer'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -83,7 +84,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 5e-2
+options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)

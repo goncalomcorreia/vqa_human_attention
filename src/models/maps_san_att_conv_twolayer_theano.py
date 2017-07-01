@@ -326,6 +326,13 @@ def build_model(shared_params, options):
                                             'tanh'))
     prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
 
+    if not options['use_second_att_layer']:
+        if options['use_kl']:
+            prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=0)
+        else:
+            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=0)
+        map_cost = T.mean(prob_map)
+
     image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
 
     combined_hidden_1 = image_feat_ave_1 + pool_feat
@@ -352,11 +359,12 @@ def build_model(shared_params, options):
                                             'combined_att_mlp_act', 'tanh'))
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
-    if options['use_kl']:
-        prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
-    else:
-        prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
-    map_cost = T.mean(prob_map)
+    if options['use_second_att_layer']:
+        if options['use_kl']:
+            prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
+        else:
+            prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
+        map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
