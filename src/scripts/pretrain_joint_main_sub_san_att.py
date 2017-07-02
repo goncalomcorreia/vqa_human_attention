@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/pretrain-complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'pretrain_main_joint'
+options['model_name'] = 'pretrain_joint_main'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -54,6 +54,7 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
 options['task_p'] = 0.5
+options['use_second_att_layer'] = True
 
 # dimensions
 options['n_emb'] = 500
@@ -168,7 +169,7 @@ def train(options):
         params = init_params(options)
         shared_params = init_shared_params(params)
 
-    shared_params_maps = init_shared_params_maps(shared_params)
+    shared_params_maps = init_shared_params_maps(shared_params, options)
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
@@ -370,7 +371,7 @@ def train(options):
 
         dropout.set_value(numpy.float32(1.))
 
-        if itr / float(num_iters_one_epoch)<=50:
+        if itr / float(num_iters_one_epoch)>30:
 
             if options['sample_answer']:
                 batch_image_feat, batch_question, batch_answer_label \
@@ -409,7 +410,7 @@ def train(options):
         # logger.info(output_norm)
         # pdb.set_trace()
         f_grad_clip()
-        if itr / float(num_iters_one_epoch)<=50:
+        if itr / float(num_iters_one_epoch)>30:
             f_grad_cache_update()
             lr_t = get_lr(options, itr / float(num_iters_one_epoch))
             f_param_update(lr_t)
@@ -419,7 +420,7 @@ def train(options):
             f_param_update_maps(lr_t)
 
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
-            if itr / float(num_iters_one_epoch)<=50:
+            if itr / float(num_iters_one_epoch)>30:
                 train_learn_curve_err = np.append(train_learn_curve_err, cost)
                 train_learn_curve_acc = np.append(train_learn_curve_acc, accu)
                 train_main_task_x_axis = np.append(train_main_task_x_axis, itr / float(num_iters_one_epoch))
@@ -432,7 +433,7 @@ def train(options):
             data_provision_att_vqa_maps.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
-            if itr / float(num_iters_one_epoch)<=50:
+            if itr / float(num_iters_one_epoch)>30:
                 logger.info('Main Task: iteration %d/%d epoch %f/%d cost %f accu %f, lr %f' \
                             % (itr, max_iters,
                                itr / float(num_iters_one_epoch), max_epochs,
