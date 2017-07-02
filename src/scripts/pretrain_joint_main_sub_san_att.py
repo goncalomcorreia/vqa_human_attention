@@ -460,8 +460,8 @@ def train(options):
 
     if len(os.listdir(checkpoint_model_path))>0:
         logger.info('Deleting checkpoint files...')
-        for check_file in os.listdir(options['checkpoint_folder']):
-            os.remove(os.path.join(options['checkpoint_folder'], check_file))
+        for check_file in os.listdir(checkpoint_model_path):
+            os.remove(os.path.join(checkpoint_model_path, check_file))
 
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
