@@ -169,7 +169,7 @@ def train(options):
         params = init_params(options)
         shared_params = init_shared_params(params)
 
-    shared_params_maps = init_shared_params_maps(shared_params, options)
+    shared_params_maps = init_shared_params_maps(shared_params)
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
