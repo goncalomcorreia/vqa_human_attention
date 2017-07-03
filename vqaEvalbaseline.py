@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 dataDir = '/home/s1670404/VQA'
 sys.path.insert(0, '%s/PythonHelperTools/vqaTools' %(dataDir))
