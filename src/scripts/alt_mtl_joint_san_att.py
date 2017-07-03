@@ -415,13 +415,12 @@ def train(options):
                                                      batch_answer_label.astype('int32').flatten(),
                                                      batch_map_label)
 
+        f_grad_clip()
         if task_choice==1:
-            f_grad_clip()
             f_grad_cache_update()
             lr_t = get_lr(options, itr / float(num_iters_one_epoch))
             f_param_update(lr_t)
         else:
-            f_grad_clip_subtask()
             f_grad_cache_update_maps()
             lr_t = get_lr(options, itr / float(num_iters_one_epoch))
             f_param_update_maps(lr_t)
