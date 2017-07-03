@@ -412,6 +412,7 @@ def train(options):
             [total_cost, map_cost] = f_train_subtask(batch_image_feat,
                                                      np.transpose(input_idx),
                                                      np.transpose(input_mask),
+                                                     batch_answer_label.astype('int32').flatten(),
                                                      batch_map_label)
 
         if task_choice==1:
