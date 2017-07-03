@@ -194,9 +194,9 @@ def train(options):
 
     reg_map = 0
 
-    for k in shared_params_maps.iterkeys():
+    for k in shared_params.iterkeys():
         if k != 'w_emb':
-            reg_map += (shared_params_maps[k]**2).sum()
+            reg_map += (shared_params[k]**2).sum()
 
     reg_cost *= weight_decay
     reg_map *= weight_decay_sub
@@ -249,7 +249,7 @@ def train(options):
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     f_grad_cache_update_maps, f_param_update_maps \
-        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
+        = eval(options['optimization'])(shared_params, grad_buf, options)
     logger.info('finished building function')
 
     # calculate how many iterations we need
