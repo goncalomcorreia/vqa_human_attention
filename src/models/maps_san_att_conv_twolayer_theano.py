@@ -332,7 +332,10 @@ def build_model(shared_params, options):
 
     if not options['use_second_att_layer']:
         if options['use_kl']:
-            prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=0)
+            if options['reverse_kl']:
+                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=0)
+            else:
+                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=0)
         else:
             prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=0)
         map_cost = T.mean(prob_map)
