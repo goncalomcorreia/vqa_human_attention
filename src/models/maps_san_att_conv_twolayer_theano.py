@@ -370,7 +370,7 @@ def build_model(shared_params, options):
                                             'combined_att_mlp_act', 'tanh'))
 
     combined_feat_attention_2_2 = fflayer(shared_params,
-                                        combined_feat_attention_2_1, options,
+                                        combined_feat_attention_2, options,
                                         prefix='combined_att_mlp_2_2',
                                         act_func=options.get(
                                             'combined_att_mlp_act', 'tanh'))
