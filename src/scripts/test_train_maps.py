@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/train_att_maps'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps_reverse_kl_data_seed'
+options['model_name'] = 'train_att_maps_first_att'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -55,7 +55,7 @@ options['use_before_attention_drop'] = True
 options['use_kl'] = True
 options['reverse_kl'] = True
 options['task_p'] = 0.5
-options['use_second_att_layer'] = True
+options['use_second_att_layer'] = False
 
 # dimensions
 options['n_emb'] = 500
