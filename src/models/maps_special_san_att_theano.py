@@ -124,8 +124,18 @@ def init_params(options):
                           prefix='image_att_mlp_1')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_1')
-    params = init_fflayer(params, n_attention, 1, options,
+    params = init_fflayer(params, n_attention, n_attention, options,
                           prefix='combined_att_mlp_1')
+
+    params = init_fflayer(params, n_attention, n_attention, options,
+                          prefix='combined_att_mlp_1_2')
+    params = init_fflayer(params, n_attention, n_attention, options,
+                          prefix='combined_att_mlp_1_3')
+    params = init_fflayer(params, n_attention, n_attention, options,
+                          prefix='combined_att_mlp_1_4')
+    params = init_fflayer(params, n_attention, 1, options,
+                          prefix='combined_att_mlp_1_5')
+
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='image_att_mlp_2')
     params = init_fflayer(params, n_filter, n_attention, options,
@@ -329,7 +339,31 @@ def build_model(shared_params, options):
                                         act_func=options.get(
                                             'combined_att_mlp_act',
                                             'tanh'))
-    prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
+    combined_feat_attention_1_2 = fflayer(shared_params,
+                                        combined_feat_attention_1, options,
+                                        prefix='combined_att_mlp_1_2',
+                                        act_func=options.get(
+                                            'combined_att_mlp_act',
+                                            'tanh'))
+    combined_feat_attention_1_3 = fflayer(shared_params,
+                                        combined_feat_attention_1_2, options,
+                                        prefix='combined_att_mlp_1_3',
+                                        act_func=options.get(
+                                            'combined_att_mlp_act',
+                                            'tanh'))
+    combined_feat_attention_1_4 = fflayer(shared_params,
+                                        combined_feat_attention_1_3, options,
+                                        prefix='combined_att_mlp_1_4',
+                                        act_func=options.get(
+                                            'combined_att_mlp_act',
+                                            'tanh'))
+    combined_feat_attention_1_5 = fflayer(shared_params,
+                                        combined_feat_attention_1_4, options,
+                                        prefix='combined_att_mlp_1_5',
+                                        act_func=options.get(
+                                            'combined_att_mlp_act',
+                                            'tanh'))
+    prob_attention_1 = T.nnet.softmax(combined_feat_attention_1_5[:, :, 0])
 
     if not options['use_second_att_layer']:
         if options['use_kl']:

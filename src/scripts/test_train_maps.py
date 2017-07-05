@@ -12,7 +12,7 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
 from optimization_weight import *
-from maps_san_att_conv_twolayer_theano import *
+from maps_special_san_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
@@ -74,7 +74,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'adam' # choices
+options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(1e-3)
 options['w_emb_lr'] = numpy.float32(80)
@@ -111,8 +111,7 @@ def train(options):
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
-                                                              options['map_data_path'],
-                                                              rng=np.random.RandomState(05072017))
+                                                              options['map_data_path'])
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
