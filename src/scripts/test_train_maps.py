@@ -76,7 +76,7 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-3)
+options['lr'] = numpy.float32(1e-1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
