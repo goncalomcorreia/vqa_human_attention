@@ -111,7 +111,7 @@ def train(options):
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
-                                                              options['map_data_path']
+                                                              options['map_data_path'],
                                                               rng=np.random.RandomState(05072017))
 
     batch_size = options['batch_size']
