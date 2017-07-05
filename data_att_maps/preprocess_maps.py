@@ -6,6 +6,7 @@ import os
 import numpy as np
 import pickle as pkl
 import h5py
+from scipy.ndimage.filters import gaussian_filter
 
 data_path = '/Users/goncalocorreia/vqa_human_attention/data_att_maps'
 
@@ -19,7 +20,11 @@ for train_att_img in os.listdir(train_path):
     qid = train_att_img.split('_')[0]
     file_path = os.path.join(train_path, train_att_img)
     sample = io.imread(file_path)
-    resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
+    low_valued = sample<sample.max()*0.7
+    I_att_proc = sample.copy()
+    I_att_proc[low_valued] = 30
+    I_att_proc_gauss = gaussian_filter(I_att_proc, 10.)
+    resized_sample = skimage.transform.resize(I_att_proc_gauss, (448,448), mode='reflect')
     downscaled_sample = skimage.transform.downscale_local_mean(resized_sample, factors=(32,32))
     flat_sample = downscaled_sample.flatten()
     if flat_sample.sum()==0:
@@ -42,7 +47,11 @@ for val_att_img in os.listdir(val_path):
     map_id = val_att_img.split('_')[1].split('.')[0]
     file_path = os.path.join(val_path, val_att_img)
     sample = io.imread(file_path)
-    resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
+    low_valued = sample<sample.max()*0.7
+    I_att_proc = sample.copy()
+    I_att_proc[low_valued] = 30
+    I_att_proc_gauss = gaussian_filter(I_att_proc, 10.)
+    resized_sample = skimage.transform.resize(I_att_proc_gauss, (448,448), mode='reflect')
     downscaled_sample=skimage.transform.pyramid_reduce(resized_sample, downscale=32)
     flat_sample = downscaled_sample.flatten()
     normalized_sample = flat_sample/flat_sample.sum()
