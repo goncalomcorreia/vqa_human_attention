@@ -130,9 +130,9 @@ def init_params(options):
                           prefix='image_att_mlp_2')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_2')
-    params = init_fflayer(params, n_attention, 1, options,
-                          prefix='combined_att_mlp_2')
-    # params = init_fflayer(params, n_attention, 1, options,
+    # params = init_fflayer(params, n_attention, n_attention, options,
+    #                       prefix='combined_att_mlp_2')
+    # params = init_fflayer(params, n_attention, n_attention, options,
     #                       prefix='combined_att_mlp_2_2')
     # params = init_fflayer(params, n_attention, 1, options,
     #                       prefix='combined_att_mlp_2_3')
@@ -388,9 +388,9 @@ def build_model(shared_params, options):
             prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=0)
         else:
             prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
-        else:
-            prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
-        map_cost = T.mean(prob_map)
+    else:
+        prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
+    map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
