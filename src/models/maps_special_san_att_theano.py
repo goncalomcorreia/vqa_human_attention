@@ -322,7 +322,7 @@ def build_model(shared_params, options):
     if options['use_attention_drop']:
         combined_feat_attention_1 = dropout_layer(combined_feat_attention_1,
                                                   dropout, trng, drop_ratio)
-    import pdb; pdb.set_trace()
+
     combined_feat_attention_1 = fflayer(shared_params,
                                         combined_feat_attention_1, options,
                                         prefix='combined_att_mlp_1',
