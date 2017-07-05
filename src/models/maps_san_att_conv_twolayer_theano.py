@@ -239,7 +239,7 @@ def similarity_layer(feat, feat_seq):
 
 
 def build_model(shared_params, options):
-    trng = RandomStreams(1234)
+    trng = RandomStreams(1235)
     drop_ratio = options['drop_ratio']
     batch_size = options['batch_size']
     n_dim = options['n_dim']
