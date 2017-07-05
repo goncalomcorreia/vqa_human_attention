@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/pretrain-complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps_more_drop'
+options['model_name'] = 'train_att_maps_more_reg'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -84,7 +84,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 10
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 5e-4
+options['weight_decay_sub'] = 5e-2
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -122,7 +122,6 @@ def train(options):
 
     params = init_params(options)
     shared_params = init_shared_params(params)
-
     shared_params_maps = init_shared_params_maps(shared_params, options)
 
     image_feat, input_idx, input_mask, \
@@ -139,12 +138,6 @@ def train(options):
     weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
                                  name = 'weight_decay_sub')
 
-    reg_cost = 0
-
-    for k in shared_params.iterkeys():
-        if k != 'w_emb':
-            reg_cost += (shared_params[k]**2).sum()
-
     reg_map = 0
 
     for k in shared_params_maps.iterkeys():
@@ -154,52 +147,28 @@ def train(options):
     reg_cost *= weight_decay
     reg_map *= weight_decay_sub
 
-    ans_reg_cost = ans_cost + reg_cost
     map_reg_cost = map_cost + reg_map
 
     ###############
     # # gradients #
     ###############
-    ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
     map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
     grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                      for k, p in shared_params_maps.iteritems()]
-    grad_buf = []
-    for elem in grad_buf_maps:
-        grad_buf.append(elem)
-    for k, p in shared_params.iteritems():
-        if k not in shared_params_maps.keys():
-            grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
 
     # accumulate the gradients within one batch
-    ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
     maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
-    grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
-    update_clip = [(g_b, T.switch(T.gt(g_norm, grad_clip),
-                                  g_b*grad_clip/g_norm, g_b))
-                   for (g_norm, g_b) in zip(grad_norm, grad_buf)]
 
     grad_norm_maps = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf_maps]
     update_clip_maps = [(g_b, T.switch(T.gt(g_norm, grad_clip),
                                   g_b*grad_clip/g_norm, g_b))
                    for (g_norm, g_b) in zip(grad_norm_maps, grad_buf_maps)]
 
-    # corresponding update function
-    f_grad_clip = theano.function(inputs = [],
-                                  updates = update_clip)
-    f_output_grad_norm = theano.function(inputs = [],
-                                         outputs = grad_norm)
     f_grad_clip_subtask = theano.function(inputs = [],
                                   updates = update_clip_maps)
-    f_output_grad_norm_subtask = theano.function(inputs = [],
-                                         outputs = grad_norm_maps)
-    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
-                              outputs = [ans_cost, accu],
-                              updates = ans_update_grad,
-                              on_unused_input='warn')
 
     f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                               outputs = [map_cost],
@@ -207,15 +176,10 @@ def train(options):
                               on_unused_input='warn')
 
     # validation function no gradient updates
-    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label],
-                            outputs = [ans_cost, accu],
-                            on_unused_input='warn')
     f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                             outputs = [map_cost],
                             on_unused_input='warn')
 
-    f_grad_cache_update, f_param_update \
-        = eval(options['optimization'])(shared_params, grad_buf, options)
     f_grad_cache_update_maps, f_param_update_maps \
         = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
     logger.info('finished building function')
