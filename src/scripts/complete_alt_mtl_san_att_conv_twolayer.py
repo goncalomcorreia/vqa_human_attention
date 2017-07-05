@@ -7,9 +7,9 @@ import sys
 import logging
 import argparse
 import math
-sys.path.append('/Users/goncalocorreia/vqa_human_attention/src/')
-sys.path.append('/Users/goncalocorreia/vqa_human_attention/src/data-providers/')
-sys.path.append('/Users/goncalocorreia/vqa_human_attention/src/models/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
 from optimization_weight import *
 from maps_san_att_conv_twolayer_theano import *
@@ -21,10 +21,10 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/Users/goncalocorreia/vqa_human_attention/data_vqa'
-options['map_data_path'] = '/Users/goncalocorreia/vqa_human_attention/data_att_maps'
+options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
+options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/Users/goncalocorreia/vqa_human_attention/expt/complete-alt-tasks-mtl'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
 options['model_name'] = 'mtl_p_0.5_rev_kl_first_att'
 options['train_split'] = 'trainval1'
