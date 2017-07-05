@@ -289,7 +289,6 @@ def train(options):
 
         [map_cost] = f_train_subtask(batch_image_feat, np.transpose(input_idx),
                                np.transpose(input_mask),
-                               batch_answer_label.astype('int32').flatten(),
                                batch_map_label)
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
