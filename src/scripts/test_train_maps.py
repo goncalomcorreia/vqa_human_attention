@@ -231,7 +231,7 @@ def train(options):
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
 
-    best_val_accu = 0.0
+    best_val_err = 10.0
     best_param = dict()
     beggining_itr = 0
     val_learn_curve_err_map = np.array([])
@@ -264,10 +264,10 @@ def train(options):
 
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
 
-            if best_val_accu < ave_val_accu:
-                best_val_accu = ave_val_accu
+            if best_val_err > ave_val_map_cost:
+                best_val_err = ave_val_map_cost
                 shared_to_cpu(shared_params, best_param)
-            logger.info('validation cost: %f accu: %f map cost: %f' %(ave_val_cost, ave_val_accu, ave_val_map_cost))
+            logger.info('map cost: %f' %(ave_val_map_cost))
             val_learn_curve_err_map = np.append(val_learn_curve_err_map, ave_val_map_cost)
             itr_learn_curve = np.append(itr_learn_curve, itr / float(num_iters_one_epoch))
 
@@ -320,8 +320,8 @@ def train(options):
                 return 0
 
 
-    logger.info('best validation accu: %f', best_val_accu)
-    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
+    logger.info('best validation accu: %f', best_val_err)
+    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_err) + '.model'
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
@@ -335,7 +335,7 @@ def train(options):
         sub_x_axis=train_sub_task_x_axis
     )
 
-    return best_val_accu
+    return best_val_err
 
 if __name__ == '__main__':
     logger = log.setup_custom_logger('root')
