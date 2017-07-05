@@ -49,8 +49,8 @@ options['use_unigram_conv'] = True
 options['use_bigram_conv'] = True
 options['use_trigram_conv'] = True
 
-options['use_attention_drop'] = False
-options['use_before_attention_drop'] = False
+options['use_attention_drop'] = True
+options['use_before_attention_drop'] = True
 
 options['use_kl'] = True
 options['reverse_kl'] = True
