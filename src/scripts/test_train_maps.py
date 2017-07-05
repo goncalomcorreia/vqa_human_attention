@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/train_att_maps'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps_reverse_kl_more_layers_seed'
+options['model_name'] = 'train_att_maps_reverse_kl_data_seed'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -92,7 +92,7 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 500
+options['eval_interval'] = 100
 options['save_interval'] = 500
 
 def get_lr(options, curr_epoch):
@@ -111,7 +111,8 @@ def train(options):
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
-                                                              options['map_data_path'])
+                                                              options['map_data_path']
+                                                              rng=np.random.RandomState(05072017))
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
