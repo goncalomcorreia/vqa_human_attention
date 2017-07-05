@@ -86,7 +86,7 @@ options['max_epochs'] = 10
 options['weight_decay'] = 5e-4
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
-options['drop_ratio'] = numpy.float32(0.5)
+options['drop_ratio'] = numpy.float32(0.75)
 options['smooth'] = numpy.float32(1e-8)
 options['grad_clip'] = numpy.float32(0.1)
 
@@ -260,7 +260,7 @@ def train(options):
                                      np.transpose(input_mask),
                                      batch_map_label)
                 val_count += batch_image_feat.shape[0]
-                val_map_cost_list.append(map_cost_val)
+                val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
 
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
 
