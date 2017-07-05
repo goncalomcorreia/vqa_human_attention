@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'mtl_p_0.5_rev_kl'
+options['model_name'] = 'mtl_p_0.5_rev_kl_first_att'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -49,8 +49,8 @@ options['use_unigram_conv'] = True
 options['use_bigram_conv'] = True
 options['use_trigram_conv'] = True
 
-options['use_attention_drop'] = False
-options['use_before_attention_drop'] = False
+options['use_attention_drop'] = True
+options['use_before_attention_drop'] = True
 
 options['use_kl'] = True
 options['reverse_kl'] = True
@@ -172,6 +172,9 @@ def train(options):
         shared_params = init_shared_params(params)
 
     shared_params_maps = init_shared_params_maps(shared_params, options)
+
+    logger.info(shared_params)
+    logger.info(shared_params_maps)
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
