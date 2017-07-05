@@ -144,7 +144,6 @@ def train(options):
         if k != 'w_emb':
             reg_map += (shared_params_maps[k]**2).sum()
 
-    reg_cost *= weight_decay
     reg_map *= weight_decay_sub
 
     map_reg_cost = map_cost + reg_map
