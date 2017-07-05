@@ -52,8 +52,8 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
-options['reverse_kl'] = False
+options['use_kl'] = True
+options['reverse_kl'] = True
 options['task_p'] = 0.5
 options['use_second_att_layer'] = True
 
@@ -84,7 +84,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 10
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 5
+options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
