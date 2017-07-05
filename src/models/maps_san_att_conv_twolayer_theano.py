@@ -384,13 +384,14 @@ def build_model(shared_params, options):
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2_3[:, :, 0])
 
     if options['use_second_att_layer']:
-        if options['reverse_kl']:
-            prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=0)
+        if options['use_kl']:
+            if options['reverse_kl']:
+                prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=0)
+            else:
+                prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
         else:
-            prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
-    else:
-        prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
-    map_cost = T.mean(prob_map)
+            prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
+        map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
