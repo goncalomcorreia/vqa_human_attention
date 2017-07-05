@@ -26,7 +26,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/pretrain-complete-alt-tasks-mtl'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps'
+options['model_name'] = 'train_att_maps_more_drop'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -320,10 +320,6 @@ def train(options):
 
 
     logger.info('best validation accu: %f', best_val_err)
-    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_err) + '.model'
-    logger.info('saving the best model to %s' %(file_name))
-    save_model(os.path.join(options['expt_folder'], file_name), options,
-               best_param)
 
 
     np.savez_compressed(
