@@ -74,7 +74,7 @@ options['std'] = 0.01
 options['init_lstm_svd'] = False
 
 # learning parameters
-options['optimization'] = 'sgd' # choices
+options['optimization'] = 'adam' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(1e-3)
 options['w_emb_lr'] = numpy.float32(80)
@@ -86,7 +86,7 @@ options['max_epochs'] = 10
 options['weight_decay'] = 5e-4
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
-options['drop_ratio'] = numpy.float32(0.75)
+options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
 options['grad_clip'] = numpy.float32(0.1)
 
