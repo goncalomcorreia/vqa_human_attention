@@ -109,8 +109,6 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
-    data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
-                                                 options['feature_file'])
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
                                                               options['map_data_path'])
@@ -151,7 +149,7 @@ def train(options):
 
     for k in shared_params_maps.iterkeys():
         if k != 'w_emb':
-            reg_map += (shared_params[k]**2).sum()
+            reg_map += (shared_params_maps[k]**2).sum()
 
     reg_cost *= weight_decay
     reg_map *= weight_decay_sub
@@ -163,14 +161,20 @@ def train(options):
     # # gradients #
     ###############
     ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
-    map_grads = T.grad(map_reg_cost, wrt = shared_params.values())
+    map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
-    grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params.iteritems()]
+    grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
+                     for k, p in shared_params_maps.iteritems()]
+    grad_buf = []
+    for elem in grad_buf_maps:
+        grad_buf.append(elem)
+    for k, p in shared_params.iteritems():
+        if k not in shared_params_maps.keys():
+            grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
 
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
-    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, map_grads)]
+    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
     grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
@@ -178,11 +182,20 @@ def train(options):
                                   g_b*grad_clip/g_norm, g_b))
                    for (g_norm, g_b) in zip(grad_norm, grad_buf)]
 
+    grad_norm_maps = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf_maps]
+    update_clip_maps = [(g_b, T.switch(T.gt(g_norm, grad_clip),
+                                  g_b*grad_clip/g_norm, g_b))
+                   for (g_norm, g_b) in zip(grad_norm_maps, grad_buf_maps)]
+
     # corresponding update function
     f_grad_clip = theano.function(inputs = [],
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
+    f_grad_clip_subtask = theano.function(inputs = [],
+                                  updates = update_clip_maps)
+    f_output_grad_norm_subtask = theano.function(inputs = [],
+                                         outputs = grad_norm_maps)
     f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
                               outputs = [ans_cost, accu],
                               updates = ans_update_grad,
@@ -204,7 +217,7 @@ def train(options):
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
     f_grad_cache_update_maps, f_param_update_maps \
-        = eval(options['optimization'])(shared_params, grad_buf, options)
+        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
     logger.info('finished building function')
 
 ##############################
@@ -213,7 +226,7 @@ def train(options):
 
     # calculate how many iterations we need
     num_iters_one_epoch = data_provision_att_vqa_maps.get_size(options['train_split']) / batch_size
-    max_iters = 25 * num_iters_one_epoch
+    max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
@@ -281,8 +294,7 @@ def train(options):
         # output_norm = f_output_grad_norm()
         # logger.info(output_norm)
         # pdb.set_trace()
-        f_grad_clip()
-
+        f_grad_clip_subtask()
         f_grad_cache_update_maps()
         lr_t = get_lr(options, itr / float(num_iters_one_epoch))
         f_param_update_maps(lr_t)
