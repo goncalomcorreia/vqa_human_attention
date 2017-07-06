@@ -281,7 +281,6 @@ def train(options):
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)
-                val_count += batch_image_feat.shape[0]
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
                 [cost, accu] = f_val(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
