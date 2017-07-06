@@ -92,6 +92,10 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
             = np.concatenate([self._answer_label['train'],
                               self._answer_label['val1']],
                              axis = 0)
+        self._map_label['trainval1'] \
+            = np.concatenate([self._map_label['train'],
+                              self._map_label['val1']],
+                             axis = 0)
 
         if n_shuffles is not None:
             for i in xrange(n_shuffles):
