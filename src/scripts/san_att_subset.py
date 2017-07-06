@@ -12,7 +12,7 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
 from optimization_weight import *
-from maps_special_san_att_theano import *
+from maps_san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
@@ -24,9 +24,9 @@ options = OrderedDict()
 options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
 options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/train_att_maps'
+options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps_first_att_no_learn'
+options['model_name'] = 'baseline'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -52,10 +52,12 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = True
 options['use_before_attention_drop'] = True
 
-options['use_kl'] = True
+options['use_kl'] = False
 options['reverse_kl'] = True
 options['task_p'] = 0.5
-options['use_second_att_layer'] = False
+options['maps_second_att_layer'] = True
+options['use_third_att_layer'] = False
+options['alt_training'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -169,8 +171,8 @@ def train(options):
                               updates = update_grad,
                               on_unused_input='warn')
     # validation function no gradient updates
-    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
-                            outputs = [map_cost],
+    f_val = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
+                            outputs = [cost, accu, map_cost],
                             on_unused_input='warn')
 
     f_grad_cache_update, f_param_update \
@@ -188,12 +190,16 @@ def train(options):
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
 
-    best_val_err = 10.0
+    best_val_accu = 0.0
     best_param = dict()
-    beggining_itr = 0
+    val_learn_curve_acc = np.array([])
+    val_learn_curve_err = np.array([])
     val_learn_curve_err_map = np.array([])
     train_learn_curve_err_map = np.array([])
     itr_learn_curve = np.array([])
+    train_learn_curve_err = np.array([])
+    train_learn_curve_acc = np.array([])
+    train_main_task_x_axis = np.array([])
     train_sub_task_x_axis = np.array([])
 
 
@@ -213,18 +219,26 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [map_cost_val] = f_val(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),
-                                     batch_map_label)
+
+                [cost, accu, map_cost_val] = f_val(batch_image_feat, np.transpose(input_idx),
+                                                   np.transpose(input_mask),
+                                                   batch_answer_label.astype('int32').flatten(),
+                                                   batch_map_label)
                 val_count += batch_image_feat.shape[0]
+                val_cost_list.append(cost * batch_image_feat.shape[0])
+                val_accu_list.append(accu * batch_image_feat.shape[0])
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
 
+            ave_val_cost = sum(val_cost_list) / float(val_count)
+            ave_val_accu = sum(val_accu_list) / float(val_count)
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
 
-            if best_val_err > ave_val_map_cost:
-                best_val_err = ave_val_map_cost
+            if best_val_accu < ave_val_accu:
+                best_val_accu = ave_val_accu
                 shared_to_cpu(shared_params, best_param)
-            logger.info('map cost: %f' %(ave_val_map_cost))
+            logger.info('validation cost: %f accu: %f map cost: %f' %(ave_val_cost, ave_val_accu, ave_val_map_cost))
+            val_learn_curve_acc = np.append(val_learn_curve_acc, ave_val_accu)
+            val_learn_curve_err = np.append(val_learn_curve_err, ave_val_cost)
             val_learn_curve_err_map = np.append(val_learn_curve_err_map, ave_val_map_cost)
             itr_learn_curve = np.append(itr_learn_curve, itr / float(num_iters_one_epoch))
 
@@ -257,6 +271,9 @@ def train(options):
         f_param_update(lr_t)
 
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
+            train_learn_curve_err = np.append(train_learn_curve_err, cost)
+            train_learn_curve_acc = np.append(train_learn_curve_acc, accu)
+            train_main_task_x_axis = np.append(train_main_task_x_axis, itr / float(num_iters_one_epoch))
             train_learn_curve_err_map = np.append(train_learn_curve_err_map, map_cost)
             train_sub_task_x_axis = np.append(train_sub_task_x_axis, itr / float(num_iters_one_epoch))
 
@@ -283,8 +300,13 @@ def train(options):
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
         valid_error_map=val_learn_curve_err_map,
+        valid_error=val_learn_curve_err,
+        valid_accuracy=val_learn_curve_acc,
         x_axis_epochs=itr_learn_curve,
+        train_error=train_learn_curve_err,
+        train_accuracy=train_learn_curve_acc,
         train_error_map=train_learn_curve_err_map,
+        main_x_axis=train_main_task_x_axis,
         sub_x_axis=train_sub_task_x_axis
     )
 
