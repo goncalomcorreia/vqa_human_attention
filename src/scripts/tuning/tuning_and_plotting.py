@@ -424,10 +424,6 @@ def train(options):
 
 
     logger.info('best validation accu: %f', best_val_accu)
-    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
-    logger.info('saving the best model to %s' %(file_name))
-    save_model(os.path.join(options['expt_folder'], file_name), options,
-               best_param)
 
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),

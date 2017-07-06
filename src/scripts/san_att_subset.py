@@ -294,7 +294,7 @@ def train(options):
                 return 0
 
 
-    logger.info('best validation accu: %f', best_val_err)
+    logger.info('best validation accu: %f', best_val_accu)
 
 
     np.savez_compressed(
@@ -310,7 +310,7 @@ def train(options):
         sub_x_axis=train_sub_task_x_axis
     )
 
-    return best_val_err
+    return best_val_accu
 
 if __name__ == '__main__':
     logger = log.setup_custom_logger('root')
