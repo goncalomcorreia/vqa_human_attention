@@ -17,18 +17,17 @@ train_att_maps = []
 att_map_qids = []
 
 for train_att_img in os.listdir(train_path):
+    if train_att_img.split('_')[1].split('.')[0]!='1':
+        print 'Found! '+train_att_img.split('_')[0]
+        continue
     qid = train_att_img.split('_')[0]
     file_path = os.path.join(train_path, train_att_img)
     sample = io.imread(file_path)
-    low_valued = sample<sample.max()*0.7
-    I_att_proc = sample.copy()
-    I_att_proc[low_valued] = 30
-    I_att_proc_gauss = gaussian_filter(I_att_proc, 10.)
-    resized_sample = skimage.transform.resize(I_att_proc_gauss, (448,448), mode='reflect')
+    resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
     downscaled_sample = skimage.transform.downscale_local_mean(resized_sample, factors=(32,32))
     flat_sample = downscaled_sample.flatten()
     if flat_sample.sum()==0:
-        normalized_sample = flat_sample
+        continue
     else:
         normalized_sample = flat_sample/flat_sample.sum()
     train_att_maps.append(normalized_sample)
@@ -43,15 +42,13 @@ val_att_map_qids = []
 val_map_ids = []
 
 for val_att_img in os.listdir(val_path):
+    if val_att_img.split('_')[1].split('.')[0]!='1':
+        continue
     qid = val_att_img.split('_')[0]
     map_id = val_att_img.split('_')[1].split('.')[0]
     file_path = os.path.join(val_path, val_att_img)
     sample = io.imread(file_path)
-    low_valued = sample<sample.max()*0.7
-    I_att_proc = sample.copy()
-    I_att_proc[low_valued] = 30
-    I_att_proc_gauss = gaussian_filter(I_att_proc, 10.)
-    resized_sample = skimage.transform.resize(I_att_proc_gauss, (448,448), mode='reflect')
+    resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
     downscaled_sample=skimage.transform.pyramid_reduce(resized_sample, downscale=32)
     flat_sample = downscaled_sample.flatten()
     normalized_sample = flat_sample/flat_sample.sum()

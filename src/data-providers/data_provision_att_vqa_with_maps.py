@@ -41,6 +41,37 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
             self._answer_label[split] = split_answer_label[idx]
             self._pointer[split] = 0
         self._splits.append('trainval1')
+        self._pointer['trainval1'] = 0
+
+        self._att_maps = OrderedDict()
+        self._att_maps_qids = OrderedDict()
+        maps = h5py.File(os.path.join(maps_data_folder,'map_dist_196.h5'), 'r')
+        att_maps = np.array(maps['label'])
+        maps.close()
+        for maps_split in ['train', 'val']:
+            with open(os.path.join(maps_data_folder, maps_split) + '.pkl') as f:
+                self._att_maps_qids[maps_split] = pkl.load(f)
+            if maps_split == 'train':
+                self._att_maps[maps_split] = att_maps[:len(self._att_maps_qids[maps_split])]
+            else:
+                self._att_maps[maps_split] = att_maps[len(self._att_maps_qids[maps_split]):]
+        self._map_label = OrderedDict()
+        qids_with_maps = self._att_maps_qids['train'] + self._att_maps_qids['val']
+        for split in self._splits[:-1]:
+            if split=='train':
+                maps_split = split
+            else:
+                maps_split = 'val'
+            map_idx = np.where(np.in1d(self._question_id[split], self._att_maps_qids[maps_split]))[0]
+            self._question_id[split] = self._question_id[split][map_idx]
+            self._image_id[split] = self._image_id[split][map_idx]
+            self._question[split] = self._question[split][map_idx]
+            self._answer[split] = self._answer[split][map_idx]
+            self._answer_counter[split] = self._answer_counter[split][map_idx]
+            self._answer_label[split] = self._answer_label[split][map_idx]
+            sort = np.argsort(self._att_maps_qids[maps_split])
+            rank = np.searchsorted(self._att_maps_qids[maps_split], self._question_id[split], sorter=sort)
+            self._map_label[split] = self._att_maps[maps_split][np.array(sort[rank])]
         self._question_id['trainval1'] = np.concatenate([self._question_id['train'],
                                                          self._question_id['val1']],
                                                         axis = 0)
@@ -61,45 +92,6 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
             = np.concatenate([self._answer_label['train'],
                               self._answer_label['val1']],
                              axis = 0)
-        self._pointer['trainval1'] = 0
-
-        self._att_maps = OrderedDict()
-        self._att_maps_qids = OrderedDict()
-        maps = h5py.File(os.path.join(maps_data_folder,'map_dist_196.h5'), 'r')
-        att_maps = np.array(maps['label'])
-        maps.close()
-        for maps_split in ['train', 'val']:
-            with open(os.path.join(maps_data_folder, maps_split) + '.pkl') as f:
-                self._att_maps_qids[maps_split] = pkl.load(f)
-            if maps_split == 'train':
-                self._att_maps[maps_split] = att_maps[:len(self._att_maps_qids[maps_split])]
-            else:
-                self._att_maps[maps_split] = att_maps[len(self._att_maps_qids[maps_split]):]
-        aux_att_maps = []
-        self._att_maps_qids['val'] = list(set(self._att_maps_qids['val']))
-        for i, elem in enumerate(self._att_maps['val']):
-            if i%3==0:
-                aux_att_maps.append(elem)
-        self._att_maps['val'] = np.array(aux_att_maps)
-        self._map_label = OrderedDict()
-        qids_with_maps = self._att_maps_qids['train'] + self._att_maps_qids['val']
-        # Remove human attention maps that are all zero
-        qids_with_maps = np.delete(np.array(qids_with_maps),
-                             np.array(list(set(np.where(att_maps==0)[0]))),
-                             axis=0)
-        qids_with_maps = list(qids_with_maps)
-        att_maps = att_maps[~np.all(att_maps == 0, axis=1)]
-        for split in self._splits:
-            map_idx = np.where(np.in1d(self._question_id[split], qids_with_maps))[0]
-            self._question_id[split] = self._question_id[split][map_idx]
-            self._image_id[split] = self._image_id[split][map_idx]
-            self._question[split] = self._question[split][map_idx]
-            self._answer[split] = self._answer[split][map_idx]
-            self._answer_counter[split] = self._answer_counter[split][map_idx]
-            self._answer_label[split] = self._answer_label[split][map_idx]
-            sort = np.argsort(qids_with_maps)
-            rank = np.searchsorted(qids_with_maps, self._question_id[split], sorter=sort)
-            self._map_label[split] = att_maps[np.array(sort[rank])]
 
         if n_shuffles is not None:
             for i in xrange(n_shuffles):
@@ -107,6 +99,21 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
 
         if state is not None:
             self.rng.set_state(state)
+
+    def check(self, split):
+        for i in xrange(len(self._question_id[split])):
+            qid = self._question_id[split][i]
+            if split == 'val1' or split == 'val2' or split == 'val2_all':
+                ind_orig = self._att_maps_qids['val'].index(qid)
+                booli = np.isclose(self._att_maps['val'][ind_orig], self._map_label[split][i])
+            elif split == 'train':
+                ind_orig = self._att_maps_qids[split].index(qid)
+                booli = np.isclose(self._att_maps[split][ind_orig], self._map_label[split][i])
+            if booli.sum()!=196:
+                print i
+                print ind_orig
+                print False
+        return True
 
     def get_map_from_qid(self, qid):
         for maps_split in ['train', 'val']:

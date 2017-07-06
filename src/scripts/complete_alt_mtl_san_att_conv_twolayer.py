@@ -55,8 +55,8 @@ options['use_before_attention_drop'] = True
 options['use_kl'] = True
 options['reverse_kl'] = True
 options['task_p'] = 0.5
-options['maps_second_att_layer'] = False
-options['use_third_att_layer'] = True
+options['maps_second_att_layer'] = True
+options['use_third_att_layer'] = False
 
 # dimensions
 options['n_emb'] = 500
