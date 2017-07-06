@@ -172,11 +172,19 @@ def init_shared_params_maps(shared_params, options):
     shared_params_maps = OrderedDict()
     for k, p in shared_params.iteritems():
         if options['maps_second_att_layer']:
-            if 'combined_mlp' not in k:
-                shared_params_maps[k] = shared_params[k]
+            if options['use_third_att_layer']:
+                if 'combined_mlp' not in k and 'mlp_3' not in k:
+                    shared_params_maps[k] = shared_params[k]
+            else:
+                if 'combined_mlp' not in k:
+                    shared_params_maps[k] = shared_params[k]
         else:
-            if 'combined_mlp' not in k and 'mlp_2' not in k:
-                shared_params_maps[k] = shared_params[k]
+            if options['use_third_att_layer']:
+                if 'combined_mlp' not in k and 'mlp_2' not in k and 'mlp_3' not in k:
+                    shared_params_maps[k] = shared_params[k]
+            else:
+                if 'combined_mlp' not in k and 'mlp_2' not in k:
+                    shared_params_maps[k] = shared_params[k]
 
     return shared_params_maps
 
