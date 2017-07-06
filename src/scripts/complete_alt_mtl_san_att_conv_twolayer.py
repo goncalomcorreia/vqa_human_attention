@@ -55,7 +55,8 @@ options['use_before_attention_drop'] = True
 options['use_kl'] = True
 options['reverse_kl'] = True
 options['task_p'] = 0.5
-options['use_second_att_layer'] = False
+options['maps_second_att_layer'] = False
+options['use_third_att_layer'] = True
 
 # dimensions
 options['n_emb'] = 500
@@ -93,7 +94,7 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 500
+options['eval_interval'] = 1000
 options['save_interval'] = 500
 
 def get_lr(options, curr_epoch):

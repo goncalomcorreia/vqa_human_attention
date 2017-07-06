@@ -132,6 +132,13 @@ def init_params(options):
                           prefix='sent_att_mlp_2')
     params = init_fflayer(params, n_attention, 1, options,
                           prefix='combined_att_mlp_2')
+    if options['use_third_att_layer']:
+        params = init_fflayer(params, n_filter, n_attention, options,
+                              prefix='image_att_mlp_3')
+        params = init_fflayer(params, n_filter, n_attention, options,
+                              prefix='sent_att_mlp_3')
+        params = init_fflayer(params, n_attention, 1, options,
+                              prefix='combined_att_mlp_3')
 
 
     for i in range(options['combined_num_mlp']):
@@ -164,7 +171,7 @@ def init_shared_params_maps(shared_params, options):
     '''
     shared_params_maps = OrderedDict()
     for k, p in shared_params.iteritems():
-        if options['use_second_att_layer']:
+        if options['maps_second_att_layer']:
             if 'combined_mlp' not in k:
                 shared_params_maps[k] = shared_params[k]
         else:
@@ -331,7 +338,7 @@ def build_model(shared_params, options):
                                             'tanh'))
     prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
 
-    if not options['use_second_att_layer']:
+    if not options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
                 prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=0)
@@ -368,7 +375,7 @@ def build_model(shared_params, options):
 
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
-    if options['use_second_att_layer']:
+    if options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
                 prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=0)
@@ -380,10 +387,44 @@ def build_model(shared_params, options):
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
-    if options.get('use_final_image_feat_only', False):
-        combined_hidden = image_feat_ave_2 + pool_feat
+    if options['use_third_att_layer']:
+
+        combined_hidden_2 = image_feat_ave_2 + pool_feat
+
+        image_feat_attention_3 = fflayer(shared_params, image_feat_down, options,
+                                         prefix='image_att_mlp_3',
+                                         act_func=options.get('image_att_mlp_act',
+                                                              'tanh'))
+        pool_feat_attention_3 = fflayer(shared_params, combined_hidden_2, options,
+                                        prefix='sent_att_mlp_3',
+                                        act_func=options.get('sent_att_mlp_act',
+                                                             'tanh'))
+        combined_feat_attention_3 = image_feat_attention_3 + \
+                                    pool_feat_attention_3[:, None, :]
+
+        if options['use_attention_drop']:
+            combined_feat_attention_3 = dropout_layer(combined_feat_attention_3,
+                                                      dropout, trng, drop_ratio)
+
+        combined_feat_attention_3 = fflayer(shared_params,
+                                            combined_feat_attention_3, options,
+                                            prefix='combined_att_mlp_3',
+                                            act_func=options.get(
+                                                'combined_att_mlp_act', 'tanh'))
+
+        prob_attention_3 = T.nnet.softmax(combined_feat_attention_3[:, :, 0])
+        image_feat_ave_3 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
+
+        if options.get('use_final_image_feat_only', False):
+            combined_hidden = image_feat_ave_3 + pool_feat
+        else:
+            combined_hidden = image_feat_ave_3 + combined_hidden_2
     else:
-        combined_hidden = image_feat_ave_2 + combined_hidden_1
+
+        if options.get('use_final_image_feat_only', False):
+            combined_hidden = image_feat_ave_2 + pool_feat
+        else:
+            combined_hidden = image_feat_ave_2 + combined_hidden_1
 
 
     for i in range(options['combined_num_mlp']):
