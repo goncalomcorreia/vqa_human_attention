@@ -203,7 +203,7 @@ def train(options):
     train_sub_task_x_axis = np.array([])
 
 
-    for itr in xrange(beggining_itr, max_iters + 1):
+    for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_map_cost_list = []
