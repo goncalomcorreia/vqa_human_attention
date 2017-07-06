@@ -377,7 +377,7 @@ def train(options):
             batch_image_feat = reshape_image_feat(batch_image_feat,
                                                   options['num_region'],
                                                   options['region_dim'])
-            [cost, accu, map_label] = f_train(batch_image_feat, np.transpose(input_idx),
+            [cost, accu, map_cost] = f_train(batch_image_feat, np.transpose(input_idx),
                                               np.transpose(input_mask),
                                               batch_answer_label.astype('int32').flatten(),
                                               batch_map_label)
