@@ -11,6 +11,8 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
+import numpy as np
+np.random.seed(1234)
 from optimization_weight import *
 from maps_san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
