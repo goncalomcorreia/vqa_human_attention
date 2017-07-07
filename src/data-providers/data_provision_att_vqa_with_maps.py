@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from data_provision_att_vqa_test import *
+from data_provision_att_vqa import *
 import time
 
 logger = logging.getLogger('root')
