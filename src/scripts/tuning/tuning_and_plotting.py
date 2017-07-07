@@ -7,9 +7,9 @@ import sys
 import logging
 import argparse
 import math
-sys.path.append('/home/s1670404/vqa_human_attention/src/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
 import numpy as np
 np.random.seed(1234)
@@ -23,12 +23,12 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
-options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo'
+options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/tuning'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'alt_ce_0.5'
+options['model_name'] = 'alt_ce_0.75'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -56,7 +56,7 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
 options['reverse_kl'] = True
-options['task_p'] = 0.5
+options['task_p'] = 0.75
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
 options['alt_training'] = True
@@ -449,7 +449,7 @@ if __name__ == '__main__':
     logger = log.setup_custom_logger('root')
     np.random.seed(1234)
     parser = argparse.ArgumentParser()
-    parser.add_argument('changes', nargs='*',
+    parser.add_argument('--changes', nargs='*',
                         help='Changes to default values',
                         default = '')
     args = parser.parse_args()
