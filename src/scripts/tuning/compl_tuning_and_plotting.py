@@ -331,11 +331,11 @@ def train(options):
             if task_choice==1:
 
                 if options['sample_answer']:
-                    batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+                    batch_image_feat, batch_question, batch_answer_label \
                         = data_provision_att_vqa.next_batch_sample(options['train_split'],
                                                                batch_size)
                 else:
-                    batch_image_feat, batch_question, batch_answer_label, batch_map_label \
+                    batch_image_feat, batch_question, batch_answer_label \
                         = data_provision_att_vqa.next_batch(options['train_split'], batch_size)
                 input_idx, input_mask \
                     = process_batch(batch_question, reverse=options['reverse'])
