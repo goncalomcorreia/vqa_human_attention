@@ -94,7 +94,7 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 100
+options['eval_interval'] = 300
 options['save_interval'] = 500
 
 def get_lr(options, curr_epoch):
