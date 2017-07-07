@@ -96,6 +96,7 @@ class DataProvisionAttVqaWithMaps(DataProvisionAttVqaTest):
             = np.concatenate([self._map_label['train'],
                               self._map_label['val1']],
                              axis = 0)
+        logger.info('finished loading human maps data')
 
         if n_shuffles is not None:
             for i in xrange(n_shuffles):
