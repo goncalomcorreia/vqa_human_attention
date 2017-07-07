@@ -28,7 +28,7 @@ options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'joint_cost_second_att'
+options['model_name'] = 'alt_ce_0.5'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -59,7 +59,7 @@ options['reverse_kl'] = True
 options['task_p'] = 0.5
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
-options['alt_training'] = False
+options['alt_training'] = True
 
 # dimensions
 options['n_emb'] = 500
