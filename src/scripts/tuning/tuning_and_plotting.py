@@ -11,6 +11,8 @@ sys.path.append('/home/s1670404/vqa_human_attention/src/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
 import log
+import numpy as np
+np.random.seed(1234)
 from optimization_weight import *
 from maps_san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
@@ -84,7 +86,7 @@ options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 10
+options['max_epochs'] = 1
 options['weight_decay'] = 5e-4
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
@@ -442,6 +444,7 @@ def train(options):
 
 if __name__ == '__main__':
     logger = log.setup_custom_logger('root')
+    np.random.seed(1234)
     parser = argparse.ArgumentParser()
     parser.add_argument('changes', nargs='*',
                         help='Changes to default values',
