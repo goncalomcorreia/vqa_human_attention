@@ -51,8 +51,8 @@ options['use_unigram_conv'] = True
 options['use_bigram_conv'] = True
 options['use_trigram_conv'] = True
 
-options['use_attention_drop'] = True
-options['use_before_attention_drop'] = True
+options['use_attention_drop'] = False
+options['use_before_attention_drop'] = False
 
 options['use_kl'] = False
 options['reverse_kl'] = True
@@ -112,6 +112,9 @@ def train(options):
     logger = logging.getLogger('root')
     logger.info(options)
     logger.info('start training')
+
+    if not os.path.exists(options['expt_folder']):
+        os.makedirs(options['expt_folder'])
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
