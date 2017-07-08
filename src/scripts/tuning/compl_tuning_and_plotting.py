@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'alt_ce_0.75'
+options['model_name'] = 'alt_kl_0.8_spec'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -55,9 +55,9 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
+options['use_kl'] = True
 options['reverse_kl'] = True
-options['task_p'] = 0.75
+options['task_p'] = 0.8
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
 options['alt_training'] = True
@@ -82,6 +82,7 @@ options['init_lstm_svd'] = False
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(1e-1)
+options['lr_sub'] = numpy.float32(1e-2)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
@@ -97,16 +98,16 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 300
+options['eval_interval'] = 1000
 options['save_interval'] = 500
 
-def get_lr(options, curr_epoch):
+def get_lr(options, curr_epoch, lr):
     if options['optimization'] == 'sgd':
         power = max((curr_epoch - options['step_start']) / options['step'], 0)
         power = math.ceil(power)
-        return options['lr'] * (options['gamma'] ** power)
+        return lr * (options['gamma'] ** power)
     else:
-        return options['lr']
+        return lr
 
 def train(options):
 
@@ -366,12 +367,12 @@ def train(options):
             if task_choice==1:
                 f_grad_clip()
                 f_grad_cache_update()
-                lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+                lr_t = get_lr(options, itr / float(num_iters_one_epoch), options['lr'])
                 f_param_update(lr_t)
             else:
                 f_grad_clip_subtask()
                 f_grad_cache_update_maps()
-                lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+                lr_t = get_lr(options, itr / float(num_iters_one_epoch), options['lr_sub'])
                 f_param_update_maps(lr_t)
 
             if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
@@ -404,7 +405,7 @@ def train(options):
 
             f_grad_clip()
             f_grad_cache_update()
-            lr_t = get_lr(options, itr / float(num_iters_one_epoch))
+            lr_t = get_lr(options, itr / float(num_iters_one_epoch), options['lr'])
             f_param_update(lr_t)
 
             if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
