@@ -343,7 +343,6 @@ def train(options):
         [shape] = f_debug(batch_image_feat,
                          input_idx,
                          input_mask,
-                         batch_answer_label,
                          batch_map_label)
 
         print shape
