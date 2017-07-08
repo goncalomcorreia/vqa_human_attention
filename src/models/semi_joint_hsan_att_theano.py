@@ -354,7 +354,7 @@ def build_model(shared_params, options):
     prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
 
     if prob_attention_2.shape[0] != map_label.shape[0]:
-        prob_attention_2_section = prob_attention_2[:int(options['hat_frac']*prob_attention_2.shape[0])]
+        prob_attention_2_section = prob_attention_2[:int(options['hat_frac']*options['batch_size'])]
     else:
         prob_attention_2_section = prob_attention_2
 
