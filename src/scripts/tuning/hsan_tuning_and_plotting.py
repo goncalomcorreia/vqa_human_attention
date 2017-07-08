@@ -254,9 +254,12 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),
-                                     batch_map_label)
+                try:
+                    [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
+                                         np.transpose(input_mask),
+                                         batch_map_label)
+                except:
+                    import pdb; pdb.set_trace()
                 val_count += batch_image_feat.shape[0]
                 val_map_cost_list.append(map_cost_val * batch_image_feat.shape[0])
 
