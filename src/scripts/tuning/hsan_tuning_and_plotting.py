@@ -324,7 +324,7 @@ def train(options):
 
         #### CONCATENATE BATCHES
         batch_image_feat = np.concatenate([batch_image_feat_map, batch_image_feat],axis = 0)
-        batch_question = p.concatenate([batch_question_map, batch_question])
+        batch_question = np.concatenate([batch_question_map, batch_question])
         input_idx, input_mask = process_batch(batch_question, reverse=options['reverse'])
         input_idx = np.transpose(input_idx)
         input_mask = np.transpose(input_mask)
