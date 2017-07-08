@@ -54,7 +54,7 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
+options['use_kl'] = True
 options['reverse_kl'] = True
 options['task_p'] = 0.5
 options['maps_second_att_layer'] = True
@@ -116,7 +116,7 @@ def train(options):
     if not os.path.exists(options['expt_folder']):
         os.makedirs(options['expt_folder'])
 
-    data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
+    data_provision_att_vqa = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
                                                               options['map_data_path'])
 
@@ -189,7 +189,7 @@ def train(options):
 ##############################
 
     # calculate how many iterations we need
-    num_iters_one_epoch = data_provision_att_vqa_maps.get_size(options['train_split']) / batch_size
+    num_iters_one_epoch = data_provision_att_vqa.get_size(options['train_split']) / batch_size
     max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
     save_interval_in_iters = options['save_interval']
@@ -216,7 +216,7 @@ def train(options):
             val_count = 0
             dropout.set_value(numpy.float32(0.))
             for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
+                in data_provision_att_vqa.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
@@ -252,11 +252,11 @@ def train(options):
 
         if options['sample_answer']:
             batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                = data_provision_att_vqa_maps.next_batch_sample(options['train_split'],
+                = data_provision_att_vqa.next_batch_sample(options['train_split'],
                                                        batch_size)
         else:
             batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                = data_provision_att_vqa_maps.next_batch(options['train_split'], batch_size)
+                = data_provision_att_vqa.next_batch(options['train_split'], batch_size)
         input_idx, input_mask \
             = process_batch(batch_question, reverse=options['reverse'])
         batch_image_feat = reshape_image_feat(batch_image_feat,
@@ -283,7 +283,7 @@ def train(options):
             train_sub_task_x_axis = np.append(train_sub_task_x_axis, itr / float(num_iters_one_epoch))
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
-            data_provision_att_vqa_maps.random_shuffle()
+            data_provision_att_vqa.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
             logger.info('iteration %d/%d epoch %f/%d map_cost %f , lr %f' \

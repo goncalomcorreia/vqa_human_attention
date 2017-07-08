@@ -82,13 +82,13 @@ options['init_lstm_svd'] = False
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
 options['lr'] = numpy.float32(1e-1)
-options['lr_sub'] = numpy.float32(1e-2)
+options['lr_sub'] = numpy.float32(1e-1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 25
+options['max_epochs'] = 50
 options['weight_decay'] = 5e-4
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
@@ -449,6 +449,10 @@ def train(options):
 
 
     logger.info('best validation accu: %f', best_val_accu)
+    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
+    logger.info('saving the best model to %s' %(file_name))
+    save_model(os.path.join(options['expt_folder'], file_name), options,
+               best_param)
 
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
