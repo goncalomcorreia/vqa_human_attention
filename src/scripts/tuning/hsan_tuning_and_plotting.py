@@ -329,6 +329,7 @@ def train(options):
 
         #### CONCATENATE BATCHES
         batch_image_feat = np.concatenate([batch_image_feat_map, batch_image_feat],axis = 0)
+        import pdb; pdb.set_trace()
         input_idx = np.concatenate([input_idx_map, input_idx],axis = 0)
         input_mask = np.concatenate([input_mask_map, input_mask],axis = 0)
         batch_answer_label = np.concatenate([batch_answer_label_map, batch_answer_label],axis = 0)
