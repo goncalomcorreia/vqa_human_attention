@@ -181,14 +181,16 @@ def train(options):
     else:
         ans_grads = T.grad(total_cost, wrt = shared_params.values())
 
+    grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
+                     for k, p in shared_params.iteritems()]
     grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                      for k, p in shared_params_maps.iteritems()]
-    grad_buf = []
-    for elem in grad_buf_maps:
-        grad_buf.append(elem)
-    for k, p in shared_params.iteritems():
-        if k not in shared_params_maps.keys():
-            grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
+    # grad_buf = []
+    # for elem in grad_buf_maps:
+    #     grad_buf.append(elem)
+    # for k, p in shared_params.iteritems():
+    #     if k not in shared_params_maps.keys():
+    #         grad_buf.append(theano.shared(p.get_value() * 0, name='%s_grad_buf' % k ))
 
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
