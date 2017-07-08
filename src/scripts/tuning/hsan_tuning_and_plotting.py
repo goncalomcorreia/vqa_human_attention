@@ -140,7 +140,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label, prob_map = build_model(shared_params, options)
 
     logger.info('finished building model')
 
