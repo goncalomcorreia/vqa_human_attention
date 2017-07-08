@@ -235,8 +235,8 @@ def train(options):
     rng = np.random.RandomState(1234)
 
     # Batch sizes
-    no_map_batch_size = int(options['batch_size']*options['hat_frac'])
-    map_batch_size = int(options['batch_size']*(1-options['hat_frac']))
+    map_batch_size = int(options['batch_size']*options['hat_frac'])
+    no_map_batch_size = int(options['batch_size']*(1-options['hat_frac']))
 
     for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
@@ -301,13 +301,11 @@ def train(options):
         else:
             batch_image_feat_map, batch_question_map, batch_answer_label_map, batch_map_label \
                 = data_provision_att_vqa_maps.next_batch(options['train_split'], map_batch_size)
-        input_idx_map, input_mask_map \
-            = process_batch(batch_question_map, reverse=options['reverse'])
+
         batch_image_feat_map = reshape_image_feat(batch_image_feat_map,
                                               options['num_region'],
                                               options['region_dim'])
-        input_idx_map = np.transpose(input_idx_map)
-        input_mask_map = np.transpose(input_mask_map)
+
         batch_answer_label_map = batch_answer_label_map.astype('int32').flatten()
 
         #### NO MAP BATCH
@@ -318,20 +316,18 @@ def train(options):
         else:
             batch_image_feat, batch_question, batch_answer_label \
                 = data_provision_att_vqa.next_batch(options['train_split'], no_map_batch_size)
-        input_idx, input_mask \
-            = process_batch(batch_question, reverse=options['reverse'])
+
         batch_image_feat = reshape_image_feat(batch_image_feat,
                                               options['num_region'],
                                               options['region_dim'])
-        input_idx = np.transpose(input_idx)
-        input_mask = np.transpose(input_mask)
         batch_answer_label = batch_answer_label.astype('int32').flatten()
 
         #### CONCATENATE BATCHES
         batch_image_feat = np.concatenate([batch_image_feat_map, batch_image_feat],axis = 0)
-        import pdb; pdb.set_trace()
-        input_idx = np.concatenate([input_idx_map, input_idx],axis = 0)
-        input_mask = np.concatenate([input_mask_map, input_mask],axis = 0)
+        batch_question = p.concatenate([batch_question_map, batch_question])
+        input_idx, input_mask = process_batch(batch_question, reverse=options['reverse'])
+        input_idx = np.transpose(input_idx)
+        input_mask = np.transpose(input_mask)
         batch_answer_label = np.concatenate([batch_answer_label_map, batch_answer_label],axis = 0)
 
         [cost, accu, map_cost] = f_train(batch_image_feat,
