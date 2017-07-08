@@ -210,7 +210,7 @@ def train(options):
 
     # calculate how many iterations we need
     no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
-    map_dataset_size = data_provision_att_vqa_with_maps.get_size(options['train_split'])
+    map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split'])
     num_iters_one_epoch = (no_map_dataset_size + map_dataset_size) / batch_size
     max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
