@@ -319,11 +319,11 @@ def build_model(shared_params, options):
     if not options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=0)
+                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=1)
             else:
-                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=0)
+                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=1)
         else:
-            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=0)
+            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
@@ -358,11 +358,11 @@ def build_model(shared_params, options):
     if options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_2_section / map_label)*prob_attention_2_section, axis=0)
+                prob_map = T.sum(T.log(prob_attention_2_section / map_label)*prob_attention_2_section, axis=1)
             else:
-                prob_map = T.sum(T.log(map_label / prob_attention_2_section)*map_label, axis=0)
+                prob_map = T.sum(T.log(map_label / prob_attention_2_section)*map_label, axis=1)
         else:
-            prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=0)
+            prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
@@ -400,7 +400,7 @@ def build_model(shared_params, options):
         # label, dropout, cost, accu
     return image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label, prob_map
+        prob_attention_1, prob_attention_2, map_cost, map_label
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu, pred_label, \

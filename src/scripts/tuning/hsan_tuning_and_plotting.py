@@ -140,7 +140,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label, prob_map = build_model(shared_params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
 
     logger.info('finished building model')
 
@@ -199,11 +199,6 @@ def train(options):
     f_val_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                             outputs = [map_cost],
                             on_unused_input='warn')
-
-    f_debug = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
-                            outputs = [prob_map.shape],
-                            on_unused_input='warn')
-
 
     f_grad_cache_update, f_param_update \
         = eval(options['optimization'])(shared_params, grad_buf, options)
@@ -339,13 +334,6 @@ def train(options):
                                          input_mask,
                                          batch_answer_label,
                                          batch_map_label)
-
-        [shape] = f_debug(batch_image_feat,
-                         input_idx,
-                         input_mask,
-                         batch_map_label)
-
-        print shape
 
         f_grad_clip()
         f_grad_cache_update()
