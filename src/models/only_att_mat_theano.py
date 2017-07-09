@@ -133,20 +133,6 @@ def init_params(options):
     params = init_fflayer(params, n_attention, 1, options,
                           prefix='combined_att_mlp_2')
 
-    for i in range(options['combined_num_mlp']):
-        if i == 0 and options['combined_num_mlp'] == 1:
-            params = init_fflayer(params, n_filter, n_output,
-                                  options, prefix='combined_mlp_%d'%(i))
-        elif i == 0 and options['combined_num_mlp'] != 1:
-            params = init_fflayer(params, n_filter, n_common_feat,
-                                  options, prefix='combined_mlp_%d'%(i))
-        elif i == options['combined_num_mlp'] - 1 :
-            params = init_fflayer(params, n_common_feat, n_output,
-                                  options, prefix='combined_mlp_%d'%(i))
-        else:
-            params = init_fflayer(params, n_common_feat, n_common_feat,
-                                  options, prefix='combined_mlp_%d'%(i))
-
     return params
 
 def init_shared_params(params):
@@ -366,41 +352,11 @@ def build_model(shared_params, options):
             prob_map = T.sum((prob_attention_2_section-map_label)**2, axis=1)
         map_cost = T.mean(prob_map)
 
-    image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
-
-
-    if options.get('use_final_image_feat_only', False):
-        combined_hidden = image_feat_ave_2 + pool_feat
-    else:
-        combined_hidden = image_feat_ave_2 + combined_hidden_1
-
-
-    for i in range(options['combined_num_mlp']):
-        if options.get('combined_mlp_drop_%d'%(i), False):
-            combined_hidden = dropout_layer(combined_hidden, dropout, trng,
-                                            drop_ratio)
-        if i == options['combined_num_mlp'] - 1:
-            combined_hidden = fflayer(shared_params, combined_hidden, options,
-                                      prefix='combined_mlp_%d'%(i),
-                                      act_func='linear')
-        else:
-            combined_hidden = fflayer(shared_params, combined_hidden, options,
-                                      prefix='combined_mlp_%d'%(i),
-                                      act_func=options.get('combined_mlp_act_%d'%(i),
-                                                           'tanh'))
-
-    # drop the image output
-    prob = T.nnet.softmax(combined_hidden)
-    prob_y = prob[T.arange(prob.shape[0]), label]
-    pred_label = T.argmax(prob, axis=1)
-    # sum or mean?
-    cost = -T.mean(T.log(prob_y))
-    accu = T.mean(T.eq(pred_label, label))
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu
     return image_feat, input_idx, input_mask, \
-        label, dropout, cost, accu, pred_label, \
+        label, dropout, \
         prob_attention_1, prob_attention_2, map_cost, map_label
 
     # return image_feat, input_idx, input_mask, \

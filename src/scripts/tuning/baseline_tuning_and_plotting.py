@@ -13,6 +13,8 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/mod
 import log
 import numpy as np
 np.random.seed(1234)
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 from optimization_weight import *
 from semi_joint_hsan_att_theano import *
 from data_provision_att_vqa_with_maps import *

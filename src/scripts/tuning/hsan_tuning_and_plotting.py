@@ -13,6 +13,8 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/mod
 import log
 import numpy as np
 np.random.seed(1234)
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 from optimization_weight import *
 from semi_joint_hsan_att_theano import *
 from data_provision_att_vqa_with_maps import *
@@ -29,7 +31,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan'
+options['model_name'] = 'hsan_kl_2_1e-4'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -55,14 +57,14 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
-options['reverse_kl'] = True
+options['use_kl'] = True
+options['reverse_kl'] = False
 options['task_p'] = 0.8
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
 options['alt_training'] = True
 options['hat_frac'] = 0.2
-options['lambda'] = 10
+options['lambda'] = 2
 
 # dimensions
 options['n_emb'] = 500
@@ -83,7 +85,7 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-3)
+options['lr'] = numpy.float32(1e-4)
 options['lr_sub'] = numpy.float32(1e-1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)

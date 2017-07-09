@@ -7,12 +7,14 @@ import sys
 import logging
 import argparse
 import math
-sys.path.append('/home/s1670404/vqa_human_attention/src/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
+import numpy as np
+np.random.seed(1234)
 from optimization_weight import *
-from maps_special_san_att_theano import *
+from only_att_mat_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
@@ -21,12 +23,12 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
-options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo'
+options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/train_att_maps'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'train_att_maps_first_att'
+options['model_name'] = 'reg_9e-2'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -49,13 +51,17 @@ options['use_unigram_conv'] = True
 options['use_bigram_conv'] = True
 options['use_trigram_conv'] = True
 
-options['use_attention_drop'] = True
-options['use_before_attention_drop'] = True
+options['use_attention_drop'] = False
+options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
-options['reverse_kl'] = True
-options['task_p'] = 0.5
-options['use_second_att_layer'] = False
+options['reverse_kl'] = False
+options['task_p'] = 0.8
+options['maps_second_att_layer'] = True
+options['use_third_att_layer'] = False
+options['alt_training'] = True
+options['hat_frac'] = 0.2
+options['lambda'] = 1
 
 # dimensions
 options['n_emb'] = 500
@@ -76,15 +82,15 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-1)
+options['lr'] = numpy.float32(1e-4)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 10
+options['max_epochs'] = 15
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 5e-4
+options['weight_decay_sub'] = 9e-2
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -121,12 +127,11 @@ def train(options):
     ###############
 
     params = init_params(options)
-    shared_params = init_shared_params(params)
-    shared_params_maps = init_shared_params_maps(shared_params, options)
+    shared_params_maps = init_shared_params(params)
 
     image_feat, input_idx, input_mask, \
-        label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+        label, dropout, \
+        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params_maps, options)
 
     logger.info('finished building model')
 
@@ -168,6 +173,11 @@ def train(options):
 
     f_grad_clip_subtask = theano.function(inputs = [],
                                   updates = update_clip_maps)
+    f_output_grad_norm = theano.function(inputs = [],
+                                         outputs = grad_norm_maps)
+
+    debug_f = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+                                         outputs = [map_label, prob_attention_2])
 
     f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                               outputs = [map_cost],
@@ -229,7 +239,7 @@ def train(options):
 
             if best_val_err > ave_val_map_cost:
                 best_val_err = ave_val_map_cost
-                shared_to_cpu(shared_params, best_param)
+                shared_to_cpu(shared_params_maps, best_param)
             logger.info('map cost: %f' %(ave_val_map_cost))
             val_learn_curve_err_map = np.append(val_learn_curve_err_map, ave_val_map_cost)
             itr_learn_curve = np.append(itr_learn_curve, itr / float(num_iters_one_epoch))
