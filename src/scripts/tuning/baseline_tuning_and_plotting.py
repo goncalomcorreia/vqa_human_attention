@@ -83,7 +83,7 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-3)
+options['lr'] = numpy.float32(1e-1)
 options['lr_sub'] = numpy.float32(1e-1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
@@ -166,7 +166,7 @@ def train(options):
     # # gradients #
     ###############
 
-    ans_grads = T.grad(total_cost, wrt = shared_params.values())
+    ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                      for k, p in shared_params.iteritems()]
