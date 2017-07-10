@@ -31,7 +31,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_kl_2_1e-4'
+options['model_name'] = 'hsan_kl_2_1e-1'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -85,7 +85,7 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-4)
+options['lr'] = numpy.float32(1e-1)
 options['lr_sub'] = numpy.float32(1e-1)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
