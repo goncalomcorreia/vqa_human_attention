@@ -57,8 +57,8 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
-options['reverse_kl'] = True
+options['use_kl'] = True
+options['reverse_kl'] = False
 options['task_p'] = 0.8
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
