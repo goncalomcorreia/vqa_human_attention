@@ -1,20 +1,23 @@
 #!/usr/bin/env python
 import sys
-sys.path.append('/home/s1670404/vqa_human_attention/src/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 import json
 import pickle
-f = open('/home/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl', 'r')
-answer_dict = pickle.load(f)
-f.close()
-answer_dict = {v: k for k, v in answer_dict.iteritems()}
+# f = open('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_vqa/answer_dict.pkl', 'r')
+# answer_dict = pickle.load(f)
+# f.close()
+# answer_dict = {v: k for k, v in answer_dict.iteritems()}
 import numpy as np
 import sys
+from scipy.stats import spearmanr
 
 model_path = sys.argv[1]
 
@@ -27,7 +30,8 @@ dropout, cost, accu, pred_label, \
 prob_attention_1, prob_attention_2 = build_model(
     shared_params, options)
 
-options['map_data_path'] = '/home/s1670404/vqa_human_attention/data_att_maps'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa/'
+options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 
 f_pass = theano.function(inputs = [image_feat, input_idx, input_mask],
                         outputs = [prob_attention_2],
@@ -53,7 +57,9 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
     [prob_attention_2] = f_pass(batch_image_feat, np.transpose(input_idx),
                          np.transpose(input_mask))
 
-    cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
-    res = np.append(res, np.mean(cross_ent))
+    # cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
+    # res = np.append(res, np.mean(cross_ent))
+    correlations = np.array([spearmanr(aa,bb) for aa,bb in zip(prob_attention_2,batch_map_label)])
+    res = np.append(res, correlations)
 
-print "Cross Entropy of validation: "+str(np.mean(res))
+print "Correlation of validation: "+str(np.mean(res))

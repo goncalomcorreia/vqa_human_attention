@@ -84,6 +84,18 @@ def get_layer(name):
     fns = layers[name]
     return (eval(fns[0]), eval(fns[1]))
 
+def upsample(x, factor):
+    """
+    Upsamples last two dimensions of symbolic theano tensor.
+    x: symbolic theano tensor
+        variable to upsample
+    factor: int
+        upsampling factor
+    """
+    x_1 = T.extra_ops.repeat(x, factor, axis=x.ndim-2)
+    x_2 = T.extra_ops.repeat(x_1, factor, axis=x.ndim-1)
+    return x_2
+
 # initialize the parmaters
 def init_params(options):
     ''' Initialize all the parameters
@@ -130,7 +142,9 @@ def init_params(options):
                           prefix='image_att_mlp_2')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_2')
-    params = init_fflayer(params, n_attention, 1, options,
+    params = init_convlayer(params, (16, n_image_feat, 1, 1), options, prefix='saliency_conv_1')
+    params = init_convlayer(params, (16, n_image_feat, 1, 1), options, prefix='saliency_conv_2')
+    params = init_fflayer(params, 32, 1, options,
                           prefix='combined_att_mlp_2')
 
     for i in range(options['combined_num_mlp']):
@@ -316,7 +330,7 @@ def build_model(shared_params, options):
                                             'tanh'))
     prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
 
-    if not options['maps_second_att_layer']:
+    if options['maps_first_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
                 prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=1)
@@ -345,8 +359,18 @@ def build_model(shared_params, options):
         combined_feat_attention_2 = dropout_layer(combined_feat_attention_2,
                                                   dropout, trng, drop_ratio)
 
+    combine_reshaped = combined_feat_attention_2.swapaxes(1,2).reshape((combined_feat_attention_2.shape[0], combined_feat_attention_2.shape[2], 14, 14))
+    saliency_conv_1 = convlayer(shared_params, combine_reshaped, options, prefix='saliency_conv_1')
+    saliency_conv_2_pool = maxpool_layer(shared_params, combine_reshaped, (2,2), options)
+    saliency_conv_2 = convlayer(shared_params, saliency_conv_2_pool, options, prefix='saliency_conv_2')
+    saliency_conv_2 = upsample(saliency_conv_2, 2)
+
+    saliency_inception = T.concatenate([saliency_conv_1, saliency_conv_2], axis=1)
+    saliency_inception = saliency_inception.reshape((saliency_inception.shape[0], saliency_inception.shape[1], saliency_inception.shape[2]*saliency_inception.shape[3]))
+    saliency_inception = saliency_inception.swapaxes(1,2)
+
     combined_feat_attention_2 = fflayer(shared_params,
-                                        combined_feat_attention_2, options,
+                                        saliency_inception, options,
                                         prefix='combined_att_mlp_2',
                                         act_func=options.get(
                                             'combined_att_mlp_act', 'tanh'))
@@ -362,8 +386,20 @@ def build_model(shared_params, options):
             else:
                 prob_map = T.sum(T.log(map_label / prob_attention_2_section)*map_label, axis=1)
         else:
-            #prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=1)
-            prob_map = T.sum((prob_attention_2_section-map_label)**2, axis=1)
+            prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=1)
+        map_cost = T.mean(prob_map)
+
+    if options['mixed_att_supervision']:
+        combined_feat_attention = combined_feat_attention_1 + combined_feat_attention_2
+        prob_attention = T.nnet.softmax(combined_feat_attention[:, :, 0])
+        prob_attention_section = prob_attention[:map_label.shape[0]]
+        if options['use_kl']:
+            if options['reverse_kl']:
+                prob_map = T.sum(T.log(prob_attention_section / map_label)*prob_attention_section, axis=1)
+            else:
+                prob_map = T.sum(T.log(map_label / prob_attention_section)*map_label, axis=1)
+        else:
+            prob_map = -T.sum(T.log(prob_attention_section)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)

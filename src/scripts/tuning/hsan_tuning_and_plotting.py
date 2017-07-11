@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -13,8 +15,6 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/mod
 import log
 import numpy as np
 np.random.seed(1234)
-import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
 from optimization_weight import *
 from semi_joint_hsan_att_theano import *
 from data_provision_att_vqa_with_maps import *
@@ -26,12 +26,12 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_kl_2_1e-1'
+options['model_name'] = 'hsan_inception'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -60,11 +60,13 @@ options['use_before_attention_drop'] = False
 options['use_kl'] = True
 options['reverse_kl'] = False
 options['task_p'] = 0.8
+options['maps_first_att_layer'] = False
 options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
-options['alt_training'] = True
-options['hat_frac'] = 0.2
-options['lambda'] = 2
+options['alt_training'] = False
+options['hat_frac'] = 0.23
+options['lambda'] = 1
+options['mixed_att_supervision'] = False
 
 # dimensions
 options['n_emb'] = 500

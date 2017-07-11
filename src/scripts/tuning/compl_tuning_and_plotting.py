@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -24,12 +26,12 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'alt_kl_0.8_spec'
+options['model_name'] = 'alt_ce_0.8_spec'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -55,7 +57,7 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = True
+options['use_kl'] = False
 options['reverse_kl'] = True
 options['task_p'] = 0.8
 options['maps_second_att_layer'] = True

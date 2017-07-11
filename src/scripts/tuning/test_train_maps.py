@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+
+import theano.sandbox.cuda
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -23,12 +26,12 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'reg_9e-2'
+options['model_name'] = 'maps_inception'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['shuffle'] = True
@@ -82,15 +85,15 @@ options['init_lstm_svd'] = False
 # learning parameters
 options['optimization'] = 'sgd' # choices
 options['batch_size'] = 100
-options['lr'] = numpy.float32(1e-4)
+options['lr'] = numpy.float32(1e-2)
 options['w_emb_lr'] = numpy.float32(80)
 options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 15
+options['max_epochs'] = 20
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 9e-2
+options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -128,6 +131,8 @@ def train(options):
 
     params = init_params(options)
     shared_params_maps = init_shared_params(params)
+
+    logger.info(shared_params_maps)
 
     image_feat, input_idx, input_mask, \
         label, dropout, \
@@ -175,9 +180,10 @@ def train(options):
                                   updates = update_clip_maps)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm_maps)
-
-    debug_f = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
-                                         outputs = [map_label, prob_attention_2])
+    #
+    # f_debug = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+    #                                      outputs = [saliency_conv],
+    #                                      on_unused_input='warn')
 
     f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                               outputs = [map_cost],
@@ -283,6 +289,10 @@ def train(options):
                         % (itr, max_iters,
                            itr / float(num_iters_one_epoch), max_epochs,
                            map_cost, lr_t))
+
+            # [saliency_conv] = f_debug(batch_image_feat, np.transpose(input_idx),
+            #                            np.transpose(input_mask),
+            #                            batch_map_label)
             if np.isnan(map_cost):
                 logger.info('nan detected')
                 file_name = options['model_name'] + '_nan_debug.model'

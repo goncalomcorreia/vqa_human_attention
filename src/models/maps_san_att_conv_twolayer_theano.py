@@ -187,7 +187,7 @@ def init_shared_params_maps(shared_params, options):
     #                 shared_params_maps[k] = shared_params[k]
     for k, p in shared_params.iteritems():
         if options['maps_second_att_layer']:
-            if 'att_mlp_2' in k:
+            if 'att_mlp' in k:
                 shared_params_maps[k] = shared_params[k]
         else:
             if 'att_mlp_1' in k:
@@ -356,11 +356,11 @@ def build_model(shared_params, options):
     if not options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=0)
+                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=1)
             else:
-                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=0)
+                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=1)
         else:
-            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=0)
+            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
@@ -393,11 +393,11 @@ def build_model(shared_params, options):
     if options['maps_second_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=0)
+                prob_map = T.sum(T.log(prob_attention_2 / map_label)*prob_attention_2, axis=1)
             else:
-                prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=0)
+                prob_map = T.sum(T.log(map_label / prob_attention_2)*map_label, axis=1)
         else:
-            prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=0)
+            prob_map = -T.sum(T.log(prob_attention_2)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
