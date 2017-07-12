@@ -392,6 +392,9 @@ def build_model(shared_params, options):
                                                      saliency_inception.shape[2]*saliency_inception.shape[3]))
     saliency_inception = saliency_inception.swapaxes(1,2)
 
+    saliency_inception = dropout_layer(saliency_inception,
+                                              dropout, trng, drop_ratio)
+
     combined_feat_attention_2 = fflayer(shared_params,
                                         saliency_inception, options,
                                         prefix='combined_att_mlp_2',
