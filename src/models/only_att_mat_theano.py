@@ -112,16 +112,9 @@ def init_params(options):
     n_output = options['n_output']
 
     # embedding weights
-    params['w_emb'] = init_weight(n_words, n_emb, options)
+    #params['w_emb'] = init_weight(n_words, n_emb, options)
     ## use the same initialization as BOW
-    #params['w_emb'] = ((numpy.random.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
-
-    # params = init_convlayer(params, (128, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
-    # params = init_convlayer(params, (128, n_image_feat, 1, 1), options, prefix='saliency_inception_1_1x1')
-    # params = init_convlayer(params, (256, 128, 3, 3), options, prefix='saliency_inception_1_3x3')
-    # params = init_convlayer(params, (32, n_image_feat, 1, 1), options, prefix='saliency_inception_2_1x1')
-    # params = init_convlayer(params, (64, 32, 3, 3), options, prefix='saliency_inception_2_3x3')
-    # params = init_convlayer(params, (64, n_image_feat, 1, 1), options, prefix='saliency_inception_3_1x1')
+    params['w_emb'] = ((numpy.random.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
 
     n_filter = 0
     if options['use_unigram_conv']:
@@ -151,8 +144,14 @@ def init_params(options):
                           prefix='image_att_mlp_2')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_2')
-    params = init_convlayer(params, (16, n_image_feat, 1, 1), options, prefix='saliency_conv_1')
-    params = init_convlayer(params, (16, n_image_feat, 1, 1), options, prefix='saliency_conv_2')
+
+    params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
+    params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_1_1x1')
+    params = init_convlayer(params, (16, 8, 3, 3), options, prefix='saliency_inception_1_3x3')
+    params = init_convlayer(params, (2, n_image_feat, 1, 1), options, prefix='saliency_inception_2_1x1')
+    params = init_convlayer(params, (4, 2, 3, 3), options, prefix='saliency_inception_2_3x3')
+    params = init_convlayer(params, (4, n_image_feat, 1, 1), options, prefix='saliency_inception_3_1x1')
+
     params = init_fflayer(params, 32, 1, options,
                           prefix='combined_att_mlp_2')
 
@@ -259,28 +258,6 @@ def build_model(shared_params, options):
                                  axis=0)
     input_emb = w_emb_extend[input_idx]
 
-    # INCEPTION LAYER
-    # image_feat_reshaped = image_feat.swapaxes(1,2).reshape((image_feat.shape[0], image_feat.shape[2], 14, 14))
-    #
-    # saliency_inception_0_1x1 = convlayer(shared_params, image_feat_reshaped, options, prefix='saliency_inception_0_1x1')
-    #
-    # saliency_inception_1_1x1 = convlayer(shared_params, image_feat_reshaped, options, prefix='saliency_inception_1_1x1')
-    # saliency_inception_1_3x3 = convlayer(shared_params, saliency_inception_1_1x1, options, prefix='saliency_inception_1_3x3')
-    # saliency_inception_1 = zero_pad(saliency_inception_1_3x3, (14,14))
-    #
-    # saliency_inception_2_1x1 = convlayer(shared_params, image_feat_reshaped, options, prefix='saliency_inception_2_1x1')
-    # saliency_inception_2_3x3 = convlayer(shared_params, saliency_inception_2_1x1, options, prefix='saliency_inception_2_3x3')
-    # saliency_inception_2 = zero_pad(saliency_inception_2_3x3, (14,14))
-    #
-    # saliency_inception_3_maxpool = maxpool_layer(shared_params, image_feat_reshaped, (2,2), options)
-    # saliency_inception_3_1x1 = convlayer(shared_params, saliency_inception_3_maxpool, options, prefix='saliency_inception_3_1x1')
-    # saliency_inception_3 = upsample(saliency_inception_3_1x1, 2)
-    #
-    # saliency_inception = T.concatenate([saliency_inception_0_1x1, saliency_inception_1, saliency_inception_2, saliency_inception_3], axis=1)
-    #
-    # saliency_inception = saliency_inception.reshape((saliency_inception.shape[0], saliency_inception.shape[1], saliency_inception.shape[2]*saliency_inception.shape[3]))
-    # saliency_inception = saliency_inception.swapaxes(1,2)
-
     # a trick here, set the maxpool_h/w to be large
     # maxpool_shape = (options['maxpool_h'], options['maxpool_w'])
 
@@ -386,14 +363,33 @@ def build_model(shared_params, options):
         combined_feat_attention_2 = dropout_layer(combined_feat_attention_2,
                                                   dropout, trng, drop_ratio)
 
-    combine_reshaped = combined_feat_attention_2.swapaxes(1,2).reshape((combined_feat_attention_2.shape[0], combined_feat_attention_2.shape[2], 14, 14))
-    saliency_conv_1 = convlayer(shared_params, combine_reshaped, options, prefix='saliency_conv_1')
-    saliency_conv_2_pool = maxpool_layer(shared_params, combine_reshaped, (2,2), options)
-    saliency_conv_2 = convlayer(shared_params, saliency_conv_2_pool, options, prefix='saliency_conv_2')
-    saliency_conv_2 = upsample(saliency_conv_2, 2)
+    combine_reshaped = combined_feat_attention_2.swapaxes(1,2).reshape((combined_feat_attention_2.shape[0],
+                                                                        combined_feat_attention_2.shape[2],
+                                                                        14,
+                                                                        14))
+    # INCEPTION LAYER
+    saliency_inception_0_1x1 = convlayer(shared_params, combine_reshaped, options, prefix='saliency_inception_0_1x1')
 
-    saliency_inception = T.concatenate([saliency_conv_1, saliency_conv_2], axis=1)
-    saliency_inception = saliency_inception.reshape((saliency_inception.shape[0], saliency_inception.shape[1], saliency_inception.shape[2]*saliency_inception.shape[3]))
+    saliency_inception_1_1x1 = convlayer(shared_params, combine_reshaped, options, prefix='saliency_inception_1_1x1')
+    saliency_inception_1_3x3 = convlayer(shared_params, saliency_inception_1_1x1, options, prefix='saliency_inception_1_3x3')
+    saliency_inception_1 = zero_pad(saliency_inception_1_3x3, (14,14))
+
+    saliency_inception_2_1x1 = convlayer(shared_params, combine_reshaped, options, prefix='saliency_inception_2_1x1')
+    saliency_inception_2_3x3 = convlayer(shared_params, saliency_inception_2_1x1, options, prefix='saliency_inception_2_3x3')
+    saliency_inception_2 = zero_pad(saliency_inception_2_3x3, (14,14))
+
+    saliency_inception_3_maxpool = maxpool_layer(shared_params, combine_reshaped, (2,2), options)
+    saliency_inception_3_1x1 = convlayer(shared_params, saliency_inception_3_maxpool, options, prefix='saliency_inception_3_1x1')
+    saliency_inception_3 = upsample(saliency_inception_3_1x1, 2)
+
+    saliency_inception = T.concatenate([saliency_inception_0_1x1,
+                                        saliency_inception_1,
+                                        saliency_inception_2,
+                                        saliency_inception_3], axis=1)
+
+    saliency_inception = saliency_inception.reshape((saliency_inception.shape[0],
+                                                     saliency_inception.shape[1],
+                                                     saliency_inception.shape[2]*saliency_inception.shape[3]))
     saliency_inception = saliency_inception.swapaxes(1,2)
 
     combined_feat_attention_2 = fflayer(shared_params,
