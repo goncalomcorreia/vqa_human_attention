@@ -92,6 +92,28 @@ def upsample(x, factor):
     x_2 = T.extra_ops.repeat(x_1, factor, axis=x.ndim-1)
     return x_2
 
+def gkern(kernlen=14, nsig=[1,1], rot = None):
+    """Returns a 2D Gaussian kernel array."""
+
+    # create nxn zeros
+    inp = np.zeros((kernlen, kernlen))
+    # set element at the middle to one, a dirac delta
+    inp[kernlen//2, kernlen//2] = 1
+    res = gaussian_filter(inp, nsig)
+    if rot != None:
+        res = rotate(res, rot)
+    return res
+
+def create_n_gaussian_blobs(width, n):
+    res = np.zeros((1, width, width))
+    k = np.sqrt(n)
+    for i in range(1, k):
+        for j in range(1, k):
+            res = np.concatenate([res,
+                                  gkern(kernlen=width, nsig=[i,j])[None, :, :]],
+                                 axis=0)
+    return res[1:]
+
 layers = {'ff': ('init_fflayer', 'fflayer'),
           'lstm': ('init_lstm_layer', 'lstm_layer'),
           'lstm_append': (None, 'lstm_append_layer')}
@@ -154,6 +176,9 @@ def init_params(options):
     params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5')
     params = init_convlayer(params, (4, n_image_feat, 1, 1), options, prefix='saliency_inception_3_1x1')
 
+    params = init_convlayer(params, (16, 32, 2, 2), options, prefix='conv_2x2')
+    params = init_LBconvlayer(params, (16, 32, 2, 2), 14, options, prefix='LB_conv')
+
     params = init_fflayer(params, 32, 1, options,
                           prefix='combined_att_mlp_2')
 
@@ -164,7 +189,8 @@ def init_shared_params(params):
     '''
     shared_params = OrderedDict()
     for k, p in params.iteritems():
-        shared_params[k] = theano.shared(params[k], name = k)
+        if '_L' not in k:
+            shared_params[k] = theano.shared(params[k], name = k)
 
     return shared_params
 
@@ -198,20 +224,23 @@ def init_convlayer(params, w_shape, options, prefix='conv'):
     params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
     return params
 
-def convlayer(shared_params, x, options, prefix='conv', act_func='tanh'):
+def convlayer(shared_params, x, options, prefix='conv', act_func='relu'):
     return eval(act_func)(conv.conv2d(x, shared_params[prefix + '_w']) +
                           shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
 
-def init_LBconvlayer(params, w_shape, options, prefix='conv'):
+def init_LBconvlayer(params, w_shape, width, options, prefix='conv'):
     ''' init Location Biased conv layer
     '''
     params[prefix + '_w'] = init_convweight(w_shape, options)
-    params[prefix + '_w*'] = init_convweight(w_shape, options)
+    params[prefix + '_w*'] = init_convweight((w_shape[0], w_shape[0], w_shape[2], w_shape[3]), options)
+    params[prefix + '_L'] = create_n_gaussian_blobs(width, w_shape[0])
     params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
     return params
 
-def LBconvlayer(shared_params, x, options, prefix='conv', act_func='tanh'):
+def LBconvlayer(shared_params, x, options, prefix='conv', act_func='relu'):
+    L = np.tile(shared_params[prefix + '_L'], (x.shape[0], 1, 1, 1))
     return eval(act_func)(conv.conv2d(x, shared_params[prefix + '_w']) +
+                          conv.conv2d(L, shared_params[prefix + '_w*']) +
                           shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
 
 def zero_pad(tensor, output_size):
@@ -424,16 +453,31 @@ def build_model(shared_params, options):
                                         saliency_inception_2,
                                         saliency_inception_3], axis=1)
 
-    saliency_inception = saliency_inception.reshape((saliency_inception.shape[0],
-                                                     saliency_inception.shape[1],
-                                                     saliency_inception.shape[2]*saliency_inception.shape[3]))
-    saliency_inception = saliency_inception.swapaxes(1,2)
+    saliency_conv = convlayer(shared_params,
+                              saliency_inception,
+                              options,
+                              prefix='conv_2x2')
+    saliency_conv = zero_pad(saliency_conv, (14,14))
 
-    saliency_inception = dropout_layer(saliency_inception,
-                                              dropout, trng, drop_ratio)
+    saliency_LBconv = convlayer(shared_params,
+                                saliency_inception,
+                                options,
+                                prefix='LB_conv')
+    saliency_LBconv = zero_pad(saliency_LBconv, (14,14))
+
+    saliency_feat = T.concatenate([saliency_conv,
+                                   saliency_LBconv], axis=1)
+
+    saliency_feat = saliency_feat.reshape((saliency_feat.shape[0],
+                                                     saliency_feat.shape[1],
+                                                     saliency_feat.shape[2] * saliency_feat.shape[3]))
+    saliency_feat = saliency_feat.swapaxes(1,2)
+
+    saliency_feat = dropout_layer(saliency_feat,
+                                  dropout, trng, drop_ratio)
 
     combined_feat_attention_2 = fflayer(shared_params,
-                                        saliency_inception, options,
+                                        saliency_feat, options,
                                         prefix='combined_att_mlp_2',
                                         act_func=options.get(
                                             'combined_att_mlp_act', 'tanh'))
