@@ -106,7 +106,7 @@ def gkern(kernlen=14, nsig=[1,1], rot = None):
 
 def create_n_gaussian_blobs(width, n):
     res = np.zeros((1, width, width))
-    k = np.sqrt(n)
+    k = int(np.sqrt(n))
     for i in range(1, k):
         for j in range(1, k):
             res = np.concatenate([res,

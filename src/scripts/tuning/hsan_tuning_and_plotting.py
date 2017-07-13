@@ -65,7 +65,7 @@ options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
 options['alt_training'] = False
 options['hat_frac'] = 0.23
-options['lambda'] = 1
+options['lambda'] = 0.5
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -164,7 +164,7 @@ def train(options):
 
     ans_reg_cost = ans_cost + reg_cost
 
-    total_cost = ans_reg_cost + options['lambda']*map_cost
+    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_cost
 
     ###############
     # # gradients #
