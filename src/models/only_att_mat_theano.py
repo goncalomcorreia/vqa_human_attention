@@ -176,8 +176,8 @@ def init_params(options):
     params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5')
     params = init_convlayer(params, (4, n_image_feat, 1, 1), options, prefix='saliency_inception_3_1x1')
 
-    params = init_convlayer(params, (16, 32, 1, 1), options, prefix='conv_2x2')
-    params = init_LBconvlayer(params, (16, 32, 1, 1), 14, options, prefix='LB_conv')
+    params = init_convlayer(params, (16, 32, 7, 7), options, prefix='conv_2x2')
+    params = init_LBconvlayer(params, (16, 32, 7, 7), 14, options, prefix='LB_conv')
 
     params = init_fflayer(params, 32, 1, options,
                           prefix='combined_att_mlp_2')
@@ -457,13 +457,13 @@ def build_model(shared_params, options):
                               saliency_inception,
                               options,
                               prefix='conv_2x2')
-    # saliency_conv = zero_pad(saliency_conv, (14,14))
+    saliency_conv = zero_pad(saliency_conv, (14,14))
 
     saliency_LBconv = convlayer(shared_params,
                                 saliency_inception,
                                 options,
                                 prefix='LB_conv')
-    # saliency_LBconv = zero_pad(saliency_LBconv, (14,14))
+    saliency_LBconv = zero_pad(saliency_LBconv, (14,14))
 
     saliency_feat = T.concatenate([saliency_conv,
                                    saliency_LBconv], axis=1)
