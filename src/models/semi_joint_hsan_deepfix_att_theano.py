@@ -5,7 +5,8 @@ import theano
 import theano.tensor as T
 from theano.tensor.nnet import conv
 from theano.tensor.signal import pool
-
+from scipy.ndimage.filters import gaussian_filter
+from scipy.ndimage import rotate
 import numpy
 import numpy as np
 from collections import OrderedDict
@@ -96,6 +97,34 @@ def upsample(x, factor):
     x_2 = T.extra_ops.repeat(x_1, factor, axis=x.ndim-1)
     return x_2
 
+def zero_pad(tensor, output_size):
+    zero_padding = T.zeros((tensor.shape[0], tensor.shape[1], output_size[0], output_size[1]))
+    pad1 = (output_size[0] - tensor.shape[2])/2
+    pad2 = (output_size[1] - tensor.shape[3])/2
+    return T.set_subtensor(zero_padding[:, :, pad1:-pad1, pad2:-pad2], tensor)
+
+def gkern(kernlen=14, nsig=[1,1], rot = None):
+    """Returns a 2D Gaussian kernel array."""
+
+    # create nxn zeros
+    inp = np.zeros((kernlen, kernlen))
+    # set element at the middle to one, a dirac delta
+    inp[kernlen//2, kernlen//2] = 1
+    res = gaussian_filter(inp, nsig)
+    if rot != None:
+        res = rotate(res, rot)
+    return res
+
+def create_n_gaussian_blobs(width, n):
+    res = np.zeros((1, width, width))
+    k = int(np.sqrt(n)) + 1
+    for i in range(1, k):
+        for j in range(1, k):
+            res = np.concatenate([res,
+                                  gkern(kernlen=width, nsig=[i,j])[None, :, :]],
+                                 axis=0)
+    return res[1:]
+
 # initialize the parmaters
 def init_params(options):
     ''' Initialize all the parameters
@@ -136,12 +165,34 @@ def init_params(options):
                           prefix='image_att_mlp_1')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_1')
-    params = init_fflayer(params, n_attention, 1, options,
+
+    params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
+    params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_1_1x1')
+    params = init_convlayer(params, (16, 8, 3, 3), options, prefix='saliency_inception_1_3x3')
+    params = init_convlayer(params, (2, n_image_feat, 1, 1), options, prefix='saliency_inception_2_1x1')
+    params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5')
+    params = init_convlayer(params, (4, n_image_feat, 1, 1), options, prefix='saliency_inception_3_1x1')
+
+    params = init_convlayer(params, (8, 32, 1, 1), options, prefix='saliency_inception_0_1x1_2')
+    params = init_convlayer(params, (8, 32, 1, 1), options, prefix='saliency_inception_1_1x1_2')
+    params = init_convlayer(params, (16, 8, 3, 3), options, prefix='saliency_inception_1_3x3_2')
+    params = init_convlayer(params, (2, 32, 1, 1), options, prefix='saliency_inception_2_1x1_2')
+    params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5_2')
+    params = init_convlayer(params, (4, 32, 1, 1), options, prefix='saliency_inception_3_1x1_2')
+
+    params = init_convlayer(params, (16, 32, 3, 3), options, prefix='conv_3x3')
+    params = init_LBconvlayer(params, (16, 32, 3, 3), 14, options, prefix='LB_conv')
+
+    params = init_convlayer(params, (16, 32, 3, 3), options, prefix='conv_3x3_2')
+    params = init_LBconvlayer(params, (16, 32, 3, 3), 14, options, prefix='LB_conv_2')
+
+    params = init_fflayer(params, 32, 1, options,
                           prefix='combined_att_mlp_1')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='image_att_mlp_2')
     params = init_fflayer(params, n_filter, n_attention, options,
                           prefix='sent_att_mlp_2')
+
     params = init_fflayer(params, n_attention, 1, options,
                           prefix='combined_att_mlp_2')
 
@@ -204,6 +255,21 @@ def convlayer(shared_params, x, options, prefix='conv', act_func='tanh'):
     return eval(act_func)(conv.conv2d(x, shared_params[prefix + '_w']) +
                           shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
 
+def init_LBconvlayer(params, w_shape, width, options, prefix='conv'):
+    ''' init Location Biased conv layer
+    '''
+    params[prefix + '_w'] = init_convweight(w_shape, options)
+    params[prefix + '_w*'] = init_convweight((w_shape[0], w_shape[0], w_shape[2], w_shape[3]), options)
+    params[prefix + '_L'] = create_n_gaussian_blobs(width, w_shape[0]).astype('float32')
+    params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
+    return params
+
+def LBconvlayer(shared_params, params, x, options, prefix='conv', act_func='relu'):
+    L = params[prefix + '_L'][np.newaxis, :, :, :]
+    return eval(act_func)(conv.conv2d(x, shared_params[prefix + '_w']) +
+                          conv.conv2d(L, shared_params[prefix + '_w*']) +
+                          shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
+
 def maxpool_layer(shared_params, x, maxpool_shape, options):
     return pool.pool_2d(x, maxpool_shape, ignore_border=False)
 
@@ -232,7 +298,7 @@ def similarity_layer(feat, feat_seq):
     return similarity
 
 
-def build_model(shared_params, options):
+def build_model(shared_params, params, options):
     trng = RandomStreams(1234)
     drop_ratio = options['drop_ratio']
     batch_size = options['batch_size']
@@ -320,22 +386,153 @@ def build_model(shared_params, options):
         combined_feat_attention_1 = dropout_layer(combined_feat_attention_1,
                                                   dropout, trng, drop_ratio)
 
+    combine_reshaped = combined_feat_attention_1.swapaxes(1,2).reshape((combined_feat_attention_1.shape[0],
+                                                                        combined_feat_attention_1.shape[2],
+                                                                        14,
+                                                                        14))
+    # INCEPTION LAYER
+    saliency_inception_0_1x1 = convlayer(shared_params,
+                                         combine_reshaped,
+                                         options,
+                                         prefix='saliency_inception_0_1x1')
+
+    saliency_inception_1_1x1 = convlayer(shared_params,
+                                         combine_reshaped,
+                                         options,
+                                         prefix='saliency_inception_1_1x1')
+    saliency_inception_1_3x3 = convlayer(shared_params,
+                                         saliency_inception_1_1x1,
+                                         options,
+                                         prefix='saliency_inception_1_3x3')
+    saliency_inception_1 = zero_pad(saliency_inception_1_3x3,
+                                    (14,14))
+
+    saliency_inception_2_1x1 = convlayer(shared_params,
+                                         combine_reshaped,
+                                         options,
+                                         prefix='saliency_inception_2_1x1')
+    saliency_inception_2_5x5 = convlayer(shared_params,
+                                         saliency_inception_2_1x1,
+                                         options,
+                                         prefix='saliency_inception_2_5x5')
+    saliency_inception_2 = zero_pad(saliency_inception_2_5x5,
+                                    (14,14))
+
+    saliency_inception_3_maxpool = maxpool_layer(shared_params,
+                                                 combine_reshaped,
+                                                 (2,2),
+                                                 options)
+    saliency_inception_3_1x1 = convlayer(shared_params,
+                                         saliency_inception_3_maxpool,
+                                         options,
+                                         prefix='saliency_inception_3_1x1')
+    saliency_inception_3 = upsample(saliency_inception_3_1x1, 2)
+
+    saliency_inception = T.concatenate([saliency_inception_0_1x1,
+                                        saliency_inception_1,
+                                        saliency_inception_2,
+                                        saliency_inception_3], axis=1)
+
+    saliency_inception_0_1x1 = convlayer(shared_params,
+                                         saliency_inception,
+                                         options,
+                                         prefix='saliency_inception_0_1x1_2')
+
+    saliency_inception_1_1x1 = convlayer(shared_params,
+                                         saliency_inception,
+                                         options,
+                                         prefix='saliency_inception_1_1x1_2')
+    saliency_inception_1_3x3 = convlayer(shared_params,
+                                         saliency_inception_1_1x1,
+                                         options,
+                                         prefix='saliency_inception_1_3x3_2')
+    saliency_inception_1 = zero_pad(saliency_inception_1_3x3,
+                                    (14,14))
+
+    saliency_inception_2_1x1 = convlayer(shared_params,
+                                         saliency_inception,
+                                         options,
+                                         prefix='saliency_inception_2_1x1_2')
+    saliency_inception_2_5x5 = convlayer(shared_params,
+                                         saliency_inception_2_1x1,
+                                         options,
+                                         prefix='saliency_inception_2_5x5_2')
+    saliency_inception_2 = zero_pad(saliency_inception_2_5x5,
+                                    (14,14))
+
+    saliency_inception_3_maxpool = maxpool_layer(shared_params,
+                                                 saliency_inception,
+                                                 (2,2),
+                                                 options)
+    saliency_inception_3_1x1 = convlayer(shared_params,
+                                         saliency_inception_3_maxpool,
+                                         options,
+                                         prefix='saliency_inception_3_1x1_2')
+    saliency_inception_3 = upsample(saliency_inception_3_1x1, 2)
+
+    saliency_inception = T.concatenate([saliency_inception_0_1x1,
+                                        saliency_inception_1,
+                                        saliency_inception_2,
+                                        saliency_inception_3], axis=1)
+
+    saliency_conv = convlayer(shared_params,
+                              saliency_inception,
+                              options,
+                              prefix='conv_3x3')
+    saliency_conv = zero_pad(saliency_conv, (14,14))
+
+    saliency_LBconv = LBconvlayer(shared_params,
+                                  params,
+                                  saliency_inception,
+                                  options,
+                                  prefix='LB_conv')
+    saliency_LBconv = zero_pad(saliency_LBconv, (14,14))
+
+    saliency_feat = T.concatenate([saliency_conv,
+                                   saliency_LBconv], axis=1)
+
+    saliency_conv = convlayer(shared_params,
+                              saliency_feat,
+                              options,
+                              prefix='conv_3x3_2')
+    saliency_conv = zero_pad(saliency_conv, (14,14))
+
+    saliency_LBconv = LBconvlayer(shared_params,
+                                  params,
+                                  saliency_feat,
+                                  options,
+                                  prefix='LB_conv_2')
+    saliency_LBconv = zero_pad(saliency_LBconv, (14,14))
+
+    saliency_feat = T.concatenate([saliency_conv,
+                                   saliency_LBconv], axis=1)
+
+    saliency_feat = saliency_feat.reshape((saliency_feat.shape[0],
+                                                     saliency_feat.shape[1],
+                                                     saliency_feat.shape[2] * saliency_feat.shape[3]))
+    saliency_feat = saliency_feat.swapaxes(1,2)
+
+    saliency_feat = dropout_layer(saliency_feat,
+                                  dropout, trng, drop_ratio)
+
     combined_feat_attention_1 = fflayer(shared_params,
-                                        combined_feat_attention_1, options,
+                                        saliency_feat, options,
                                         prefix='combined_att_mlp_1',
                                         act_func=options.get(
                                             'combined_att_mlp_act',
                                             'tanh'))
+
     prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
+    prob_attention_1_section = prob_attention_1[:map_label.shape[0]]
 
     if options['maps_first_att_layer']:
         if options['use_kl']:
             if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_1 / map_label)*prob_attention_1, axis=1)
+                prob_map = T.sum(T.log(prob_attention_1_section / map_label)*prob_attention_1_section, axis=1)
             else:
-                prob_map = T.sum(T.log(map_label / prob_attention_1)*map_label, axis=1)
+                prob_map = T.sum(T.log(map_label / prob_attention_1_section)*map_label, axis=1)
         else:
-            prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=1)
+            prob_map = -T.sum(T.log(prob_attention_1_section)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
     image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)

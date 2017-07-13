@@ -17,7 +17,7 @@ import pickle
 # answer_dict = {v: k for k, v in answer_dict.iteritems()}
 import numpy as np
 import sys
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
 
 model_path = sys.argv[1]
 
@@ -46,7 +46,7 @@ dropout.set_value(numpy.float32(0.))
 res = np.array([])
 
 for batch_image_feat, batch_question, batch_answer_label, batch_map_label in data_provision_att_vqa.iterate_batch(
-        options['val_split'], options['batch_size']):
+        'val1', options['batch_size']):
 
     input_idx, input_mask = process_batch(
         batch_question, reverse=options['reverse'])
@@ -59,7 +59,7 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
 
     # cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
     # res = np.append(res, np.mean(cross_ent))
-    correlations = np.array([spearmanr(aa,bb) for aa,bb in zip(prob_attention_2,batch_map_label)])
+    correlations = np.array([spearmanr(aa,bb)[0] for aa,bb in zip(prob_attention_2,batch_map_label)])
     res = np.append(res, correlations)
 
 print "Correlation of validation: "+str(np.mean(res))
