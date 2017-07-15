@@ -29,9 +29,9 @@ options = OrderedDict()
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/expt/tuning'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_deepfix_lmda_0.01_ce'
+options['model_name'] = 'hsan_deepfix_lmda_0.5'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -59,12 +59,12 @@ options['use_trigram_conv'] = True
 options['use_attention_drop'] = False
 options['use_before_attention_drop'] = False
 
-options['use_kl'] = False
+options['use_kl'] = True
 options['reverse_kl'] = False
 options['maps_first_att_layer'] = True
 options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
-options['lambda'] = 0.01
+options['lambda'] = 0.5
 options['mixed_att_supervision'] = False
 
 # dimensions
