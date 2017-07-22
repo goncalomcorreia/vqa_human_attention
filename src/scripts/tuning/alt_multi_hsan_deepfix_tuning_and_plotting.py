@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -13,10 +13,8 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
-import numpy as np
-np.random.seed(1234)
 from optimization_weight import *
-from semi_joint_hsan_att_theano import *
+from multi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_provision_att_vqa_without_maps import *
 from data_processing_vqa import *
@@ -31,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'baseline'
+options['model_name'] = 'alt_hsan_with_mixed'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -61,13 +59,12 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['task_p'] = 0.8
 options['maps_first_att_layer'] = False
 options['maps_second_att_layer'] = True
-options['use_third_att_layer'] = False
-options['alt_training'] = False
 options['hat_frac'] = 0.23
 options['lambda'] = 0.5
+options['beta'] = 0.2
+options['mult_combination'] = True
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -97,7 +94,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
-options['weight_decay'] = 5e-4
+options['weight_decay'] = 0
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
@@ -125,7 +122,7 @@ def train(options):
 
     if not os.path.exists(options['expt_folder']):
         os.makedirs(options['expt_folder'])
-
+    #
     # data_provision_att_vqa = DataProvisionAttVqaWithoutMaps(options['data_path'],
     #                                                         options['feature_file'],
     #                                                         options['map_data_path'])
@@ -144,9 +141,15 @@ def train(options):
     params = init_params(options)
     shared_params = init_shared_params(params)
 
+    shared_params_answer = init_shared_params_answer(shared_params, options)
+    shared_params_maps = init_shared_params_maps(shared_params, options)
+
+    logger.info(shared_params_maps)
+    logger.info(shared_params_answer)
+
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
 
     logger.info('finished building model')
 
@@ -155,47 +158,77 @@ def train(options):
     ###############
     weight_decay = theano.shared(numpy.float32(options['weight_decay']),\
                                  name = 'weight_decay')
+    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
+                                 name = 'weight_decay_sub')
 
     reg_cost = 0
 
-    for k in shared_params.iterkeys():
+    for k in shared_params_answer.iterkeys():
         if k != 'w_emb':
-            reg_cost += (shared_params[k]**2).sum()
+            reg_cost += (shared_params_answer[k]**2).sum()
+
+    reg_map = 0
+
+    for k in shared_params_maps.iterkeys():
+        if k != 'w_emb':
+            reg_map += (shared_params_maps[k]**2).sum()
 
     reg_cost *= weight_decay
+    reg_map *= weight_decay_sub
 
     ans_reg_cost = ans_cost + reg_cost
-
-    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_cost
+    map_reg_cost = map_cost + reg_map
 
     ###############
     # # gradients #
     ###############
+    ans_grads = T.grad(ans_reg_cost, wrt = shared_params_answer.values())
+    map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
-    ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
-
+    grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
+                     for k, p in shared_params_maps.iteritems() if 'shared' not in k]
+    grad_buf_answer = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
+                for k, p in shared_params_answer.iteritems() if 'shared' not in k]
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                     for k, p in shared_params.iteritems()]
+                for k, p in shared_params_answer.iteritems() if 'shared' in k]
+
+    grad_buf_maps = [grad_buf, grad_buf_maps]
+    grad_buf_maps = [elem for sublist in grad_buf_maps for elem in sublist]
+    grad_buf_answer = [grad_buf, grad_buf_answer]
+    grad_buf_answer = [elem for sublist in grad_buf_answer for elem in sublist]
 
     # accumulate the gradients within one batch
-    ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf, ans_grads)]
-
+    ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_answer, ans_grads)]
+    maps_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_maps, map_grads)]
     # need to declare a share variable ??
     grad_clip = options['grad_clip']
-    grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf]
+    grad_norm = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf_answer]
     update_clip = [(g_b, T.switch(T.gt(g_norm, grad_clip),
                                   g_b*grad_clip/g_norm, g_b))
-                   for (g_norm, g_b) in zip(grad_norm, grad_buf)]
+                   for (g_norm, g_b) in zip(grad_norm, grad_buf_answer)]
+
+    grad_norm_maps = [T.sqrt(T.sum(g_b**2)) for g_b in grad_buf_maps]
+    update_clip_maps = [(g_b, T.switch(T.gt(g_norm, grad_clip),
+                                  g_b*grad_clip/g_norm, g_b))
+                   for (g_norm, g_b) in zip(grad_norm_maps, grad_buf_maps)]
 
     # corresponding update function
     f_grad_clip = theano.function(inputs = [],
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
-
-    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
-                              outputs = [ans_cost, accu, map_cost],
+    f_grad_clip_subtask = theano.function(inputs = [],
+                                  updates = update_clip_maps)
+    f_output_grad_norm_subtask = theano.function(inputs = [],
+                                         outputs = grad_norm_maps)
+    f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label],
+                              outputs = [ans_cost, accu],
                               updates = ans_update_grad,
+                              on_unused_input='warn')
+
+    f_train_subtask = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
+                              outputs = [map_cost],
+                              updates = maps_update_grad,
                               on_unused_input='warn')
 
     # validation function no gradient updates
@@ -207,15 +240,18 @@ def train(options):
                             on_unused_input='warn')
 
     f_grad_cache_update, f_param_update \
-        = eval(options['optimization'])(shared_params, grad_buf, options)
+        = eval(options['optimization'])(shared_params_answer, grad_buf_answer, options)
+    f_grad_cache_update_maps, f_param_update_maps \
+        = eval(options['optimization'])(shared_params_maps, grad_buf_maps, options)
+    logger.info('finished building function')
 
 ##############################
 #### Pre-Training
 ##############################
 
     # calculate how many iterations we need
-    #no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
-    map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split'])
+    # no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
+    map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split_maps'])
     num_iters_one_epoch = (map_dataset_size) / batch_size
     max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
@@ -234,10 +270,6 @@ def train(options):
     train_learn_curve_acc = np.array([])
     train_main_task_x_axis = np.array([])
     train_sub_task_x_axis = np.array([])
-
-
-    # Make sure always using the same random seed
-    rng = np.random.RandomState(1234)
 
     # Batch sizes
     map_batch_size = int(options['batch_size']*options['hat_frac'])
@@ -318,16 +350,24 @@ def train(options):
         input_idx = np.transpose(input_idx)
         input_mask = np.transpose(input_mask)
 
-        [cost, accu, map_cost] = f_train(batch_image_feat_map,
-                                         input_idx,
-                                         input_mask,
-                                         batch_answer_label_map,
-                                         batch_map_label)
+        [cost, accu] = f_train(batch_image_feat_map,
+                               input_idx,
+                               input_mask,
+                               batch_answer_label_map)
 
         f_grad_clip()
         f_grad_cache_update()
         lr_t = get_lr(options, itr / float(num_iters_one_epoch), options['lr'])
         f_param_update(lr_t)
+
+        [map_cost] = f_train_subtask(batch_image_feat_map,
+                                     input_idx,
+                                     input_mask,
+                                     batch_map_label)
+
+        f_grad_clip_subtask()
+        f_grad_cache_update_maps()
+        f_param_update_maps(lr_t)
 
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             train_learn_curve_err = np.append(train_learn_curve_err, cost)

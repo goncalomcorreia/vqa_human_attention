@@ -143,30 +143,30 @@ def init_params(options):
     # embedding weights
     # params['w_emb'] = init_weight(n_words, n_emb, options)
     ## use the same initialization as BOW
-    params['w_emb'] = ((rng.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
+    params['w_emb_shared'] = ((rng.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
 
     n_filter = 0
     if options['use_unigram_conv']:
         params = init_fflayer(params, n_emb, options['num_filter_unigram'],
-                              options, prefix='conv_unigram')
+                              options, prefix='conv_unigram_shared')
         n_filter += options['num_filter_unigram']
     if options['use_bigram_conv']:
         params = init_fflayer(params, 2 * n_emb, options['num_filter_bigram'],
-                              options, prefix='conv_bigram')
+                              options, prefix='conv_bigram_shared')
         n_filter += options['num_filter_bigram']
     if options['use_trigram_conv']:
         params = init_fflayer(params, 3 * n_emb, options['num_filter_trigram'],
-                              options, prefix='conv_trigram')
+                              options, prefix='conv_trigram_shared')
         n_filter += options['num_filter_trigram']
 
     params = init_fflayer(params, n_image_feat, n_filter, options,
-                          prefix='image_mlp')
+                          prefix='image_mlp_shared')
 
     # attention model based parameters
     params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='image_att_mlp_1')
+                          prefix='image_att_mlp_1_shared')
     params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='sent_att_mlp_1')
+                          prefix='sent_att_mlp_1_shared')
 
     if options['maps_first_att_layer']:
         params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
@@ -183,17 +183,16 @@ def init_params(options):
         params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5_2')
         params = init_convlayer(params, (4, 32, 1, 1), options, prefix='saliency_inception_3_1x1_2')
 
-        params = init_LBconvlayer(params, (32, 32, 7, 7), 4, 14, options, prefix='LB_conv')
+        params = init_LBconvlayer(params, (32, 32, 7, 7), 16, 14, options, prefix='saliency_LB_conv')
 
-        params = init_convlayer(params, (1, 32, 1, 1), options, prefix='combined_att_mlp_1')
-    else:
-        params = init_fflayer(params, n_attention, 1, options,
-                              prefix='combined_att_mlp_1')
+        params = init_convlayer(params, (1, 32, 1, 1), options, prefix='saliency_combined_att_mlp_1')
 
+    params = init_fflayer(params, n_attention, 1, options,
+                          prefix='combined_att_mlp_1_shared_second')
     params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='image_att_mlp_2')
+                          prefix='image_att_mlp_2_shared_second')
     params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='sent_att_mlp_2')
+                          prefix='sent_att_mlp_2_shared_second')
 
     if options['maps_second_att_layer']:
         params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
@@ -210,26 +209,26 @@ def init_params(options):
         params = init_convlayer(params, (4, 2, 5, 5), options, prefix='saliency_inception_2_5x5_2')
         params = init_convlayer(params, (4, 32, 1, 1), options, prefix='saliency_inception_3_1x1_2')
 
-        params = init_LBconvlayer(params, (32, 32, 7, 7), 4, 14, options, prefix='LB_conv')
+        params = init_LBconvlayer(params, (32, 32, 7, 7), 16, 14, options, prefix='saliency_LB_conv')
 
-        params = init_convlayer(params, (1, 32, 1, 1), options, prefix='combined_att_mlp_2')
-    else:
-        params = init_fflayer(params, n_attention, 1, options,
-                              prefix='combined_att_mlp_2')
+        params = init_convlayer(params, (1, 32, 1, 1), options, prefix='saliency_combined_att_mlp_2')
+
+    params = init_fflayer(params, n_attention, 1, options,
+                          prefix='answer_combined_att_mlp_2')
 
     for i in range(options['combined_num_mlp']):
         if i == 0 and options['combined_num_mlp'] == 1:
             params = init_fflayer(params, n_filter, n_output,
-                                  options, prefix='combined_mlp_%d'%(i))
+                                  options, prefix='answer_combined_mlp_%d'%(i))
         elif i == 0 and options['combined_num_mlp'] != 1:
             params = init_fflayer(params, n_filter, n_common_feat,
-                                  options, prefix='combined_mlp_%d'%(i))
+                                  options, prefix='answer_combined_mlp_%d'%(i))
         elif i == options['combined_num_mlp'] - 1 :
             params = init_fflayer(params, n_common_feat, n_output,
-                                  options, prefix='combined_mlp_%d'%(i))
+                                  options, prefix='answer_combined_mlp_%d'%(i))
         else:
             params = init_fflayer(params, n_common_feat, n_common_feat,
-                                  options, prefix='combined_mlp_%d'%(i))
+                                  options, prefix='answer_combined_mlp_%d'%(i))
 
     return params
 
@@ -241,6 +240,31 @@ def init_shared_params(params):
         shared_params[k] = theano.shared(params[k], name = k)
 
     return shared_params
+
+def init_shared_params_maps(shared_params, options):
+    ''' return a shared version of shared task parameters
+    '''
+    shared_params_maps = OrderedDict()
+
+    for k, p in shared_params.iteritems():
+        if 'shared' in k or 'saliency' in k:
+            if options['maps_first_att_layer'] and 'second' in k:
+                pass
+            else:
+                shared_params_maps[k] = shared_params[k]
+
+    return shared_params_maps
+
+def init_shared_params_answer(shared_params, options):
+    ''' return a shared version of shared task parameters
+    '''
+    shared_params_answer = OrderedDict()
+
+    for k, p in shared_params.iteritems():
+        if 'shared' in k or 'answer' in k:
+            shared_params_answer[k] = shared_params[k]
+
+    return shared_params_answer
 
 # activation function for ff layer
 def tanh(x):
@@ -285,7 +309,7 @@ def init_LBconvlayer(params, w_shape, n_blobs, width, options, prefix='conv'):
     params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
     return params
 
-def LBconvlayer(shared_params, params, x, options, prefix='conv', act_func='relu'):
+def LBconvlayer(shared_params, params, x, options, prefix='conv', act_func='tanh'):
     L = params[prefix + '_L'][np.newaxis, :, :, :]
     return eval(act_func)(conv.conv2d(x, shared_params[prefix + '_w']) +
                           conv.conv2d(L, shared_params[prefix + '_w*']) +
@@ -304,7 +328,7 @@ def dropout_layer(x, dropout, trng, drop_ratio=0.5):
                                          dtype = x.dtype) \
                        / (numpy.float32(1.0) - drop_ratio)),
                       x)
-    return x_drop.astype(floatX)
+    return x_drop
 
 def similarity_layer(feat, feat_seq):
     def _step(x, y):
@@ -325,7 +349,7 @@ def build_model(shared_params, params, options):
     batch_size = options['batch_size']
     n_dim = options['n_dim']
 
-    w_emb = shared_params['w_emb']
+    w_emb = shared_params['w_emb_shared']
 
     dropout = theano.shared(numpy.float32(0.))
     image_feat = T.ftensor3('image_feat')
@@ -339,7 +363,7 @@ def build_model(shared_params, params, options):
     empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
                                               dtype='float32'),
                                name='empty_word')
-    w_emb_extend = T.concatenate([empty_word, shared_params['w_emb']],
+    w_emb_extend = T.concatenate([empty_word, shared_params['w_emb_shared']],
                                  axis=0)
     input_emb = w_emb_extend[input_idx]
 
@@ -354,7 +378,7 @@ def build_model(shared_params, params, options):
 
     if options['use_unigram_conv']:
         unigram_conv_feat = fflayer(shared_params, input_emb, options,
-                                    prefix='conv_unigram',
+                                    prefix='conv_unigram_shared',
                                     act_func=options.get('sent_conv_act', 'tanh'))
         unigram_pool_feat = unigram_conv_feat.max(axis=1)
     if options['use_bigram_conv']:
@@ -364,7 +388,7 @@ def build_model(shared_params, params, options):
                                                       input_emb.shape[1] - 1,
                                                       2 * input_emb.shape[2]))
         bigram_conv_feat = fflayer(shared_params, bigram_emb,
-                                   options, prefix='conv_bigram',
+                                   options, prefix='conv_bigram_shared',
                                    act_func=options.get('sent_conv_act', 'tanh'))
         bigram_pool_feat = bigram_conv_feat.max(axis=1)
     if options['use_trigram_conv']:
@@ -375,7 +399,7 @@ def build_model(shared_params, params, options):
                                                       input_emb.shape[1] - 2,
                                                       3 * input_emb.shape[2]))
         trigram_conv_feat = fflayer(shared_params, trigram_emb,
-                                    options, prefix='conv_trigram',
+                                    options, prefix='conv_trigram_shared',
                                     act_func=options.get('sent_conv_act', 'tanh'))
         trigram_pool_feat = trigram_conv_feat.max(axis=1)  #
 
@@ -384,7 +408,7 @@ def build_model(shared_params, params, options):
                                trigram_pool_feat], axis=1)
 
     image_feat_down = fflayer(shared_params, image_feat, options,
-                              prefix='image_mlp',
+                              prefix='image_mlp_shared',
                               act_func=options.get('image_mlp_act',
                                                    'tanh'))
     if options.get('use_before_attention_drop', False):
@@ -394,11 +418,11 @@ def build_model(shared_params, params, options):
     # attention model begins here
     # first layer attention model
     image_feat_attention_1 = fflayer(shared_params, image_feat_down, options,
-                                     prefix='image_att_mlp_1',
+                                     prefix='image_att_mlp_1_shared',
                                      act_func=options.get('image_att_mlp_act',
                                                           'tanh'))
     pool_feat_attention_1 = fflayer(shared_params, pool_feat, options,
-                                    prefix='sent_att_mlp_1',
+                                    prefix='sent_att_mlp_1_shared',
                                     act_func=options.get('sent_att_mlp_act',
                                                          'tanh'))
     combined_feat_attention_1 = image_feat_attention_1 + \
@@ -501,55 +525,68 @@ def build_model(shared_params, params, options):
                                       params,
                                       saliency_inception,
                                       options,
-                                      prefix='LB_conv')
+                                      prefix='saliency_LB_conv')
         saliency_feat = zero_pad(saliency_LBconv, (14,14))
 
         saliency_feat = dropout_layer(saliency_feat,
-                                      dropout, trng, 0.75)
+                                      dropout, trng, drop_ratio)
 
-        combined_feat_attention_1 = convlayer(shared_params,
+        saliency_feat = convlayer(shared_params,
                                               saliency_feat,
                                               options,
-                                              prefix='combined_att_mlp_1',
-                                              act_func=options.get('combined_att_mlp_act', 'tanh'))
+                                              prefix='saliency_combined_att_mlp_1',
+                                              act_func=options.get(
+                                                  'combined_att_mlp_act', 'tanh'))
 
-        combined_feat_attention_1 = combined_feat_attention_1.reshape((combined_feat_attention_1.shape[0],
-                                                         combined_feat_attention_1.shape[1],
-                                                         combined_feat_attention_1.shape[2] * combined_feat_attention_1.shape[3]))
-        combined_feat_attention_1 = combined_feat_attention_1.swapaxes(1,2)
+        saliency_feat = saliency_feat.reshape((saliency_feat.shape[0],
+                                                         saliency_feat.shape[1],
+                                                         saliency_feat.shape[2] * saliency_feat.shape[3]))
+        saliency_feat = saliency_feat.swapaxes(1,2)
+
+        saliency_attention = T.nnet.softmax(saliency_feat[:, :, 0])
+
+        saliency_attention_section = saliency_attention[:map_label.shape[0]]
+
+        if options['use_kl']:
+            if options['reverse_kl']:
+                prob_map = T.sum(T.log(saliency_attention_section / map_label)*saliency_attention_section, axis=1)
+            else:
+                prob_map = T.sum(T.log(map_label / saliency_attention_section)*map_label, axis=1)
+        else:
+            prob_map = -T.sum(T.log(saliency_attention_section)*map_label, axis=1)
+
+        map_cost = T.mean(prob_map)
+
+    if options['maps_first_att_layer']:
+
+        attention_combined = saliency_feat + combined_feat_attention_1
+        combined_feat_attention_1 = fflayer(shared_params,
+                                            attention_combined, options,
+                                            prefix='combined_att_mlp_1_shared_second',
+                                            act_func=options.get(
+                                                'combined_att_mlp_act', 'tanh'))
+        prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
+        image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
+
     else:
 
         combined_feat_attention_1 = fflayer(shared_params,
                                             combined_feat_attention_1, options,
-                                            prefix='combined_att_mlp_1',
+                                            prefix='combined_att_mlp_1_shared_second',
                                             act_func=options.get(
-                                                'combined_att_mlp_act',
-                                                'tanh'))
-
-    prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
-    prob_attention_1_section = prob_attention_1[:map_label.shape[0]]
-
-    if options['maps_first_att_layer']:
-        if options['use_kl']:
-            if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_1_section / map_label)*prob_attention_1_section, axis=1)
-            else:
-                prob_map = T.sum(T.log(map_label / prob_attention_1_section)*map_label, axis=1)
-        else:
-            prob_map = -T.sum(T.log(prob_attention_1_section)*map_label, axis=1)
-        map_cost = T.mean(prob_map)
-
-    image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
+                                                'combined_att_mlp_act', 'tanh'))
+        prob_attention_1 = T.nnet.softmax(combined_feat_attention_1[:, :, 0])
+        image_feat_ave_1 = (prob_attention_1[:, :, None] * image_feat_down).sum(axis=1)
 
     combined_hidden_1 = image_feat_ave_1 + pool_feat
     # second layer attention model
 
     image_feat_attention_2 = fflayer(shared_params, image_feat_down, options,
-                                     prefix='image_att_mlp_2',
+                                     prefix='image_att_mlp_2_shared_second',
                                      act_func=options.get('image_att_mlp_act',
                                                           'tanh'))
     pool_feat_attention_2 = fflayer(shared_params, combined_hidden_1, options,
-                                    prefix='sent_att_mlp_2',
+                                    prefix='sent_att_mlp_2_shared_second',
                                     act_func=options.get('sent_att_mlp_act',
                                                          'tanh'))
     combined_feat_attention_2 = image_feat_attention_2 + \
@@ -652,48 +689,58 @@ def build_model(shared_params, params, options):
                                       params,
                                       saliency_inception,
                                       options,
-                                      prefix='LB_conv')
+                                      prefix='saliency_LB_conv')
         saliency_feat = zero_pad(saliency_LBconv, (14,14))
 
         saliency_feat = dropout_layer(saliency_feat,
                                       dropout, trng, drop_ratio)
 
-        combined_feat_attention_2 = convlayer(shared_params,
+        saliency_feat = convlayer(shared_params,
                                               saliency_feat,
                                               options,
-                                              prefix='combined_att_mlp_2',
+                                              prefix='saliency_combined_att_mlp_2',
                                               act_func=options.get(
                                                   'combined_att_mlp_act', 'tanh'))
 
-        combined_feat_attention_2 = combined_feat_attention_2.reshape((combined_feat_attention_2.shape[0],
-                                                         combined_feat_attention_2.shape[1],
-                                                         combined_feat_attention_2.shape[2] * combined_feat_attention_2.shape[3]))
-        combined_feat_attention_2 = combined_feat_attention_2.swapaxes(1,2)
+        saliency_feat = saliency_feat.reshape((saliency_feat.shape[0],
+                                                         saliency_feat.shape[1],
+                                                         saliency_feat.shape[2] * saliency_feat.shape[3]))
+        saliency_feat = saliency_feat.swapaxes(1,2)
+
+        saliency_attention = T.nnet.softmax(saliency_feat[:, :, 0])
+
+        saliency_attention_section = saliency_attention[:map_label.shape[0]]
+
+        if options['use_kl']:
+            if options['reverse_kl']:
+                prob_map = T.sum(T.log(saliency_attention_section / map_label)*saliency_attention_section, axis=1)
+            else:
+                prob_map = T.sum(T.log(map_label / saliency_attention_section)*map_label, axis=1)
+        else:
+            prob_map = -T.sum(T.log(saliency_attention_section)*map_label, axis=1)
+
+        map_cost = T.mean(prob_map)
+
+    if options['maps_second_att_layer']:
+
+        attention_combined = saliency_feat + combined_feat_attention_2
+        combined_feat_attention_2 = fflayer(shared_params,
+                                            attention_combined, options,
+                                            prefix='answer_combined_att_mlp_2',
+                                            act_func=options.get(
+                                                'combined_att_mlp_act', 'tanh'))
+        prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
+        image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
     else:
 
         combined_feat_attention_2 = fflayer(shared_params,
                                             combined_feat_attention_2, options,
-                                            prefix='combined_att_mlp_2',
+                                            prefix='answer_combined_att_mlp_2',
                                             act_func=options.get(
                                                 'combined_att_mlp_act', 'tanh'))
-
-    prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
-
-    prob_attention_2_section = prob_attention_2[:map_label.shape[0]]
-
-    if options['maps_second_att_layer']:
-        if options['use_kl']:
-            if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_2_section / map_label)*prob_attention_2_section, axis=1)
-            else:
-                prob_map = T.sum(T.log(map_label / prob_attention_2_section)*map_label, axis=1)
-        else:
-            prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=1)
-        map_cost = T.mean(prob_map)
-
-    image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
-
+        prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
+        image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
     if options.get('use_final_image_feat_only', False):
         combined_hidden = image_feat_ave_2 + pool_feat
@@ -707,11 +754,11 @@ def build_model(shared_params, params, options):
                                             drop_ratio)
         if i == options['combined_num_mlp'] - 1:
             combined_hidden = fflayer(shared_params, combined_hidden, options,
-                                      prefix='combined_mlp_%d'%(i),
+                                      prefix='answer_combined_mlp_%d'%(i),
                                       act_func='linear')
         else:
             combined_hidden = fflayer(shared_params, combined_hidden, options,
-                                      prefix='combined_mlp_%d'%(i),
+                                      prefix='answer_combined_mlp_%d'%(i),
                                       act_func=options.get('combined_mlp_act_%d'%(i),
                                                            'tanh'))
 

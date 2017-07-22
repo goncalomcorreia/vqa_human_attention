@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -29,9 +29,9 @@ options = OrderedDict()
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_deepfix_lmda_0.5'
+options['model_name'] = 'hsan_deepfix_lmda_0.6'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -61,10 +61,10 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['maps_first_att_layer'] = True
-options['maps_second_att_layer'] = False
+options['maps_first_att_layer'] = False
+options['maps_second_att_layer'] = True
 options['hat_frac'] = 0.23
-options['lambda'] = 0.5
+options['lambda'] = 0.1
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -94,7 +94,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
-options['weight_decay'] = 5e-4
+options['weight_decay'] = 0
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)

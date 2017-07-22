@@ -13,8 +13,6 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
-import numpy as np
-np.random.seed(1234)
 from optimization_weight import *
 from semi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
@@ -31,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'tune_hsan_deepfix_lmda_0.5_first'
+options['model_name'] = 'tune_hsan_deepfix_first_att_drop_0.75'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -64,7 +62,7 @@ options['reverse_kl'] = False
 options['maps_first_att_layer'] = True
 options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
-options['lambda'] = 0.5
+options['lambda'] = 0.6
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -93,8 +91,8 @@ options['momentum'] = numpy.float32(0.9)
 options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
-options['max_epochs'] = 15
-options['weight_decay'] = 5e-4
+options['max_epochs'] = 20
+options['weight_decay'] = 0
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)

@@ -17,7 +17,14 @@ import pickle
 # answer_dict = {v: k for k, v in answer_dict.iteritems()}
 import numpy as np
 import sys
-from scipy.stats import spearmanr, pearsonr
+from scipy.stats import spearmanr, pearsonr, sem
+
+def correlation_coefficient(y_true, y_pred):
+
+    num = np.sum(y_true * y_pred)
+    den = np.sqrt((np.sum(y_true**2))*(np.sum(y_pred**2)))
+
+    return num/den
 
 model_path = sys.argv[1]
 
@@ -59,7 +66,9 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
 
     # cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
     # res = np.append(res, np.mean(cross_ent))
-    correlations = np.array([spearmanr(aa,bb)[0] for aa,bb in zip(prob_attention_2,batch_map_label)])
-    res = np.append(res, correlations)
+    for aa,bb in zip(batch_map_label, prob_attention_2):
+        if np.isnan(spearmanr(aa,bb)[0]):
+            import pdb; pdb.set_trace()
+        res = np.append(res, 2*spearmanr(aa,bb)[0])
 
-print "Correlation of validation: "+str(np.mean(res))
+print "Correlation of validation: "+str(np.mean(res))+" , SEM: "+str(sem(res))

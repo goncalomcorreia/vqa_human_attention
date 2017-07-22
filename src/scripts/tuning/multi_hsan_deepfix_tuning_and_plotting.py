@@ -13,10 +13,8 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
-import numpy as np
-np.random.seed(1234)
 from optimization_weight import *
-from semi_joint_hsan_att_theano import *
+from multi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_provision_att_vqa_without_maps import *
 from data_processing_vqa import *
@@ -31,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'baseline'
+options['model_name'] = 'multi_hsan_mult'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -61,13 +59,12 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['task_p'] = 0.8
 options['maps_first_att_layer'] = False
 options['maps_second_att_layer'] = True
-options['use_third_att_layer'] = False
-options['alt_training'] = False
 options['hat_frac'] = 0.23
 options['lambda'] = 0.5
+options['beta'] = 0.5
+options['mult_combination'] = True
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -97,7 +94,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
-options['weight_decay'] = 5e-4
+options['weight_decay'] = 0
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
@@ -125,7 +122,7 @@ def train(options):
 
     if not os.path.exists(options['expt_folder']):
         os.makedirs(options['expt_folder'])
-
+    #
     # data_provision_att_vqa = DataProvisionAttVqaWithoutMaps(options['data_path'],
     #                                                         options['feature_file'],
     #                                                         options['map_data_path'])
@@ -146,7 +143,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label, prob_attention_combined = build_model(shared_params, params, options)
 
     logger.info('finished building model')
 
@@ -159,7 +156,7 @@ def train(options):
     reg_cost = 0
 
     for k in shared_params.iterkeys():
-        if k != 'w_emb':
+        if k != 'w_emb_shared':
             reg_cost += (shared_params[k]**2).sum()
 
     reg_cost *= weight_decay
@@ -172,7 +169,7 @@ def train(options):
     # # gradients #
     ###############
 
-    ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
+    ans_grads = T.grad(total_cost, wrt = shared_params.values())
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                      for k, p in shared_params.iteritems()]
@@ -214,8 +211,8 @@ def train(options):
 ##############################
 
     # calculate how many iterations we need
-    #no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
-    map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split'])
+    # no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
+    map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split_maps'])
     num_iters_one_epoch = (map_dataset_size) / batch_size
     max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
