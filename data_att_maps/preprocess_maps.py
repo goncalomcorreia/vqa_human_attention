@@ -18,7 +18,6 @@ att_map_qids = []
 
 for train_att_img in os.listdir(train_path):
     if train_att_img.split('_')[1].split('.')[0]!='1':
-        print 'Found! '+train_att_img.split('_')[0]
         continue
     qid = train_att_img.split('_')[0]
     file_path = os.path.join(train_path, train_att_img)
@@ -30,6 +29,8 @@ for train_att_img in os.listdir(train_path):
         continue
     else:
         normalized_sample = flat_sample/flat_sample.sum()
+    if np.allclose(normalized_sample, normalized_sample[0]):
+        continue
     train_att_maps.append(normalized_sample)
     att_map_qids.append(qid)
 
@@ -51,7 +52,12 @@ for val_att_img in os.listdir(val_path):
     resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
     downscaled_sample=skimage.transform.pyramid_reduce(resized_sample, downscale=32)
     flat_sample = downscaled_sample.flatten()
-    normalized_sample = flat_sample/flat_sample.sum()
+    if flat_sample.sum()==0:
+        continue
+    else:
+        normalized_sample = flat_sample/flat_sample.sum()
+    if np.allclose(normalized_sample, normalized_sample[0]):
+        continue
     val_att_maps.append(normalized_sample)
     val_att_map_qids.append(qid)
     val_map_ids.append(map_id)

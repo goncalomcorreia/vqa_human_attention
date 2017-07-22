@@ -7,7 +7,7 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 from optimization_weight import *
-from semi_joint_hsan_att_theano import *
+from semi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
 import json
