@@ -33,7 +33,7 @@ options, params, shared_params = load_model(model_path)
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
-prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
 
 f_pass = theano.function(
     inputs=[

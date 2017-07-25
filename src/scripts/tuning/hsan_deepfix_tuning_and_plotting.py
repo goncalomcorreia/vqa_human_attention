@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'tune_hsan_deepfix_first_att_drop_0.75'
+options['model_name'] = 'tune_hsan_fixed_deepfix'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -63,7 +63,7 @@ options['maps_first_att_layer'] = True
 options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
 options['lambda'] = 0.6
-options['mixed_att_supervision'] = False
+options['use_LB'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -93,7 +93,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
 options['weight_decay'] = 0
-options['weight_decay_sub'] = 5e-4
+options['weight_decay_sub'] = 3e-2
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -157,11 +157,22 @@ def train(options):
         if k != 'w_emb':
             reg_cost += (shared_params[k]**2).sum()
 
+    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
+                                 name = 'weight_decay_sub')
+
+    reg_map = 0
+
+    for k in shared_params.iterkeys():
+        if 'saliency' in k:
+            reg_map += (shared_params[k]**2).sum()
+
     reg_cost *= weight_decay
+    reg_map *= weight_decay_sub
 
     ans_reg_cost = ans_cost + reg_cost
+    map_reg_cost = map_cost + reg_map
 
-    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_cost
+    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_reg_cost
 
     ###############
     # # gradients #

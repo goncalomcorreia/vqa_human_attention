@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'alt_hsan_with_mixed'
+options['model_name'] = 'alt_hsan_with_fixed_first'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -59,13 +59,11 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['maps_first_att_layer'] = False
-options['maps_second_att_layer'] = True
+options['maps_first_att_layer'] = True
+options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
-options['lambda'] = 0.5
-options['beta'] = 0.2
+options['use_LB'] = True
 options['mult_combination'] = True
-options['mixed_att_supervision'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -144,12 +142,9 @@ def train(options):
     shared_params_answer = init_shared_params_answer(shared_params, options)
     shared_params_maps = init_shared_params_maps(shared_params, options)
 
-    logger.info(shared_params_maps)
-    logger.info(shared_params_answer)
-
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label, answer_gate, saliency_feat = build_model(shared_params, params, options)
 
     logger.info('finished building model')
 
@@ -186,16 +181,9 @@ def train(options):
     map_grads = T.grad(map_reg_cost, wrt = shared_params_maps.values())
 
     grad_buf_maps = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                     for k, p in shared_params_maps.iteritems() if 'shared' not in k]
+                     for k, p in shared_params_maps.iteritems()]
     grad_buf_answer = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params_answer.iteritems() if 'shared' not in k]
-    grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
-                for k, p in shared_params_answer.iteritems() if 'shared' in k]
-
-    grad_buf_maps = [grad_buf, grad_buf_maps]
-    grad_buf_maps = [elem for sublist in grad_buf_maps for elem in sublist]
-    grad_buf_answer = [grad_buf, grad_buf_answer]
-    grad_buf_answer = [elem for sublist in grad_buf_answer for elem in sublist]
+                for k, p in shared_params_answer.iteritems()]
 
     # accumulate the gradients within one batch
     ans_update_grad = [(g_b, g) for g_b, g in zip(grad_buf_answer, ans_grads)]
@@ -291,7 +279,7 @@ def train(options):
                 batch_image_feat = reshape_image_feat(batch_image_feat,
                                                       options['num_region'],
                                                       options['region_dim'])
-                #import pdb; pdb.set_trace()
+
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)

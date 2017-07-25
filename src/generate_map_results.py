@@ -6,7 +6,7 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/mod
 import theano.sandbox.cuda
 theano.sandbox.cuda.use('gpu1')
 from optimization_weight import *
-from san_att_conv_twolayer_theano import *
+from semi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 import json
@@ -34,8 +34,8 @@ options, params, shared_params = load_model(model_path)
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
-prob_attention_1, prob_attention_2 = build_model(
-    shared_params, options)
+prob_attention_1, prob_attention_2, map_cost, map_label = build_model(
+    shared_params, params, options)
 
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa/'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'

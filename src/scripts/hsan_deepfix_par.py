@@ -16,7 +16,7 @@ import log
 import numpy as np
 np.random.seed(1234)
 from optimization_weight import *
-from semi_joint_hsan_deepfix_att_theano import *
+from multi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_provision_att_vqa_without_maps import *
 from data_processing_vqa import *
@@ -29,9 +29,9 @@ options = OrderedDict()
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix_multi'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_deepfix_lmda_0.6'
+options['model_name'] = 'hsan_deepfix_multi_lmda_0.6'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -65,8 +65,8 @@ options['maps_first_att_layer'] = True
 options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
 options['lambda'] = 0.6
-options['use_LB'] = True
 options['mixed_att_supervision'] = False
+options['use_LB'] = True
 
 # dimensions
 options['n_emb'] = 500
@@ -157,7 +157,7 @@ def train(options):
     reg_cost = 0
 
     for k in shared_params.iterkeys():
-        if k != 'w_emb':
+        if k != 'w_emb_shared':
             reg_cost += (shared_params[k]**2).sum()
 
     reg_cost *= weight_decay

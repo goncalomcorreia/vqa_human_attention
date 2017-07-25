@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'multi_hsan_mult'
+options['model_name'] = 'multi_hsan_mult_fixed'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -59,13 +59,12 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['maps_first_att_layer'] = False
-options['maps_second_att_layer'] = True
+options['maps_first_att_layer'] = True
+options['maps_second_att_layer'] = False
 options['hat_frac'] = 0.23
 options['lambda'] = 0.5
-options['beta'] = 0.5
+options['use_LB'] = True
 options['mult_combination'] = True
-options['mixed_att_supervision'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -143,7 +142,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label, prob_attention_combined = build_model(shared_params, params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
 
     logger.info('finished building model')
 
