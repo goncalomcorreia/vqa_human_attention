@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'tune_hsan_LB_0dot2'
+options['model_name'] = 'tune_lambda_0dot1'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -62,9 +62,9 @@ options['reverse_kl'] = False
 options['maps_first_att_layer'] = False
 options['maps_second_att_layer'] = True
 options['hat_frac'] = 0.23
-options['lambda'] = 0.2
+options['lambda'] = 0.1
 options['saliency_dropout'] = numpy.float32(0.5)
-options['use_LB'] = True
+options['use_LB'] = False
 
 # dimensions
 options['n_emb'] = 500
