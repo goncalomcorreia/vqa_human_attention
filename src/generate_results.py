@@ -30,7 +30,7 @@ result_file_name = sys.argv[2]
 result = OrderedDict()
 
 options, params, shared_params = load_model(model_path)
-
+options['saliency_dropout'] = 0.5
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
 prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
@@ -47,9 +47,6 @@ options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa/'
 
 data_provision_att_vqa = DataProvisionAttVqa(options['data_path'], options['feature_file'])
 
-val_cost_list = []
-val_accu_list = []
-val_count = 0
 dropout.set_value(numpy.float32(0.))
 
 i=0

@@ -31,6 +31,7 @@ model_path = sys.argv[1]
 result = OrderedDict()
 
 options, params, shared_params = load_model(model_path)
+options['saliency_dropout'] = 0.5
 
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
@@ -39,6 +40,7 @@ prob_attention_1, prob_attention_2, map_cost, map_label = build_model(
 
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa/'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
+
 
 f_pass = theano.function(inputs = [image_feat, input_idx, input_mask],
                         outputs = [prob_attention_2],
@@ -64,7 +66,7 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
     [prob_attention_2] = f_pass(batch_image_feat, np.transpose(input_idx),
                          np.transpose(input_mask))
 
-    # cross_ent = -np.sum(np.log(prob_attention_2)*batch_map_label, axis=0)
+    # cross_ent = -np.sum(np.log(prob_attention_1)*batch_map_label, axis=0)
     # res = np.append(res, np.mean(cross_ent))
     for aa,bb in zip(batch_map_label, prob_attention_2):
         if np.isnan(spearmanr(aa,bb)[0]):

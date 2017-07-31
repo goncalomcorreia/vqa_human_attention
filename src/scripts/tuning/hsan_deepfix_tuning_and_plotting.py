@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -29,7 +29,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'tune_hsan_fixed_deepfix'
+options['model_name'] = 'tune_hsan_LB_0dot2'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -59,11 +59,12 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['maps_first_att_layer'] = True
-options['maps_second_att_layer'] = False
+options['maps_first_att_layer'] = False
+options['maps_second_att_layer'] = True
 options['hat_frac'] = 0.23
-options['lambda'] = 0.6
-options['use_LB'] = False
+options['lambda'] = 0.2
+options['saliency_dropout'] = numpy.float32(0.5)
+options['use_LB'] = True
 
 # dimensions
 options['n_emb'] = 500
@@ -93,7 +94,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
 options['weight_decay'] = 0
-options['weight_decay_sub'] = 3e-2
+options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)

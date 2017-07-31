@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-dataDir = '/home/s1670404/VQA'
+dataDir = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/VQA/'
 sys.path.insert(0, '%s/PythonHelperTools/vqaTools' %(dataDir))
 sys.path.insert(0, '%s/PythonEvaluationTools/' %(dataDir))
 from vqa import VQA

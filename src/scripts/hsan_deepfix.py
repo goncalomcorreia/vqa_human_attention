@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -31,7 +31,7 @@ options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attent
 options['feature_file'] = 'trainval_feat.h5'
 options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_deepfix_lmda_0.6'
+options['model_name'] = 'hsan_deepfix_lmda_0.2_smallkernels'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -61,12 +61,12 @@ options['use_before_attention_drop'] = False
 
 options['use_kl'] = True
 options['reverse_kl'] = False
-options['maps_first_att_layer'] = True
-options['maps_second_att_layer'] = False
+options['maps_first_att_layer'] = False
+options['maps_second_att_layer'] = True
 options['hat_frac'] = 0.23
-options['lambda'] = 0.6
-options['use_LB'] = True
-options['mixed_att_supervision'] = False
+options['lambda'] = 0.2
+options['saliency_dropout'] = 0.5
+options['use_LB'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -132,6 +132,9 @@ def train(options):
                                                               options['feature_file'],
                                                               options['map_data_path'])
 
+    data_provision_att_vqa_validate = DataProvisionAttVqa(options['data_path'],
+                                                          options['feature_file'])
+
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
 
@@ -160,11 +163,22 @@ def train(options):
         if k != 'w_emb':
             reg_cost += (shared_params[k]**2).sum()
 
+    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
+                                 name = 'weight_decay_sub')
+
+    reg_map = 0
+
+    for k in shared_params.iterkeys():
+        if 'saliency' in k:
+            reg_map += (shared_params[k]**2).sum()
+
     reg_cost *= weight_decay
+    reg_map *= weight_decay_sub
 
     ans_reg_cost = ans_cost + reg_cost
+    map_reg_cost = map_cost + reg_map
 
-    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_cost
+    total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_reg_cost
 
     ###############
     # # gradients #
@@ -267,7 +281,7 @@ def train(options):
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             val_count = 0
             for batch_image_feat, batch_question, batch_answer_label \
-                in data_provision_att_vqa.iterate_batch(options['val_split'],
+                in data_provision_att_vqa_validate.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
