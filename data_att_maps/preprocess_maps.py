@@ -16,21 +16,40 @@ val_path = os.path.join(data_path, 'vqahat_val')
 train_att_maps = []
 att_map_qids = []
 
-for train_att_img in os.listdir(train_path):
-    if train_att_img.split('_')[1].split('.')[0]!='1':
-        continue
-    qid = train_att_img.split('_')[0]
-    file_path = os.path.join(train_path, train_att_img)
-    sample = io.imread(file_path)
-    resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
-    downscaled_sample = skimage.transform.downscale_local_mean(resized_sample, factors=(32,32))
-    flat_sample = downscaled_sample.flatten()
-    if flat_sample.sum()==0:
-        continue
+qids_id_tuple_list = [(img.split('_')[0],img.split('_')[1].split('.')[0]) for img in os.listdir(train_path)]
+
+qids_ids_dict = {}
+
+for tup in qids_id_tuple_list:
+    if tup[0] in qids_ids_dict.keys():
+        qids_ids_dict[tup[0]].append(tup[1])
     else:
+        qids_ids_dict[tup[0]] = [tup[1]]
+
+for key, value in qids_ids_dict.iteritems():
+    qid = key
+    qid_maps = []
+    for qid_id in value:
+        train_att_img = qid+'_'+qid_id+'.png'
+        file_path = os.path.join(train_path, train_att_img)
+        sample = io.imread(file_path)
+        resized_sample = skimage.transform.resize(sample, (448,448), mode='reflect')
+        downscaled_sample = skimage.transform.downscale_local_mean(resized_sample, factors=(32,32))
+        flat_sample = downscaled_sample.flatten()
+
+        if np.allclose(flat_sample, flat_sample[0]):
+            continue
+
         normalized_sample = flat_sample/flat_sample.sum()
-    if np.allclose(normalized_sample, normalized_sample[0]):
+        qid_maps.append(normalized_sample)
+
+    if len(qid_maps)<1:
+        print qid
         continue
+
+    qid_maps = np.asarray(qid_maps)
+    flat_sample = qid_maps.mean(axis=0)
+    normalized_sample = flat_sample/flat_sample.sum()
     train_att_maps.append(normalized_sample)
     att_map_qids.append(qid)
 
