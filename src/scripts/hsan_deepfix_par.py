@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu0')
+theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"

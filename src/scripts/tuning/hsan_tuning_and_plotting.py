@@ -97,7 +97,7 @@ options['gamma'] = 1
 options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
-options['weight_decay'] = 5e-4
+options['weight_decay'] = 0
 options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
@@ -172,7 +172,7 @@ def train(options):
     # # gradients #
     ###############
 
-    ans_grads = T.grad(ans_reg_cost, wrt = shared_params.values())
+    ans_grads = T.grad(total_cost, wrt = shared_params.values())
 
     grad_buf = [theano.shared(p.get_value() * 0, name='%s_grad_buf' % k )
                      for k, p in shared_params.iteritems()]
