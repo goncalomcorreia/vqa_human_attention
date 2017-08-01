@@ -96,7 +96,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 20
 options['weight_decay'] = 5e-4
-options['weight_decay_sub'] = 5e-2
+options['weight_decay_sub'] = 5e-4
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -146,8 +146,6 @@ def train(options):
     ####################
     # add weight decay #
     ####################
-    weight_decay = theano.shared(numpy.float32(options['weight_decay']),\
-                                 name = 'weight_decay')
     weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
                                  name = 'weight_decay_sub')
 
@@ -220,7 +218,6 @@ def train(options):
     train_learn_curve_err_map = np.array([])
     itr_learn_curve = np.array([])
     train_sub_task_x_axis = np.array([])
-
 
     for itr in xrange(beggining_itr, max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
@@ -305,7 +302,11 @@ def train(options):
                 return 0
 
 
-    logger.info('best validation accu: %f', best_val_err)
+    logger.info('best validation error: %f', best_val_err)
+    file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_err) + '.model'
+    logger.info('saving the best model to %s' %(file_name))
+    save_model(os.path.join(options['expt_folder'], file_name), options,
+               best_param)
 
 
     np.savez_compressed(

@@ -138,30 +138,30 @@ def init_params(options):
     # embedding weights
     #params['w_emb'] = init_weight(n_words, n_emb, options)
     ## use the same initialization as BOW
-    params['w_emb'] = ((numpy.random.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
-
-    n_filter = 0
-    if options['use_unigram_conv']:
-        params = init_fflayer(params, n_emb, options['num_filter_unigram'],
-                              options, prefix='conv_unigram')
-        n_filter += options['num_filter_unigram']
-    if options['use_bigram_conv']:
-        params = init_fflayer(params, 2 * n_emb, options['num_filter_bigram'],
-                              options, prefix='conv_bigram')
-        n_filter += options['num_filter_bigram']
-    if options['use_trigram_conv']:
-        params = init_fflayer(params, 3 * n_emb, options['num_filter_trigram'],
-                              options, prefix='conv_trigram')
-        n_filter += options['num_filter_trigram']
-
-    params = init_fflayer(params, n_image_feat, n_filter, options,
-                          prefix='image_mlp')
-
-    # attention model based parameters
-    params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='image_att_mlp_1')
-    params = init_fflayer(params, n_filter, n_attention, options,
-                          prefix='sent_att_mlp_1')
+    # params['w_emb'] = ((numpy.random.rand(n_words, n_emb) * 2 - 1) * 0.5).astype(floatX)
+    #
+    # n_filter = 0
+    # if options['use_unigram_conv']:
+    #     params = init_fflayer(params, n_emb, options['num_filter_unigram'],
+    #                           options, prefix='conv_unigram')
+    #     n_filter += options['num_filter_unigram']
+    # if options['use_bigram_conv']:
+    #     params = init_fflayer(params, 2 * n_emb, options['num_filter_bigram'],
+    #                           options, prefix='conv_bigram')
+    #     n_filter += options['num_filter_bigram']
+    # if options['use_trigram_conv']:
+    #     params = init_fflayer(params, 3 * n_emb, options['num_filter_trigram'],
+    #                           options, prefix='conv_trigram')
+    #     n_filter += options['num_filter_trigram']
+    #
+    # params = init_fflayer(params, n_image_feat, n_filter, options,
+    #                       prefix='image_mlp')
+    #
+    # # attention model based parameters
+    # params = init_fflayer(params, n_filter, n_attention, options,
+    #                       prefix='image_att_mlp_1')
+    # params = init_fflayer(params, n_filter, n_attention, options,
+    #                       prefix='sent_att_mlp_1')
 
     params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_0_1x1')
     params = init_convlayer(params, (8, n_image_feat, 1, 1), options, prefix='saliency_inception_1_1x1')
@@ -181,8 +181,8 @@ def init_params(options):
         params = init_LBconvlayer(params, (32, 32, 5, 5), 16, 14, options, prefix='LB_conv')
         params = init_LBconvlayer(params, (32, 32, 5, 5), 16, 12, options, prefix='LB_conv_2')
     else:
-        params = init_convlayer(params, (32, 32, 5, 5), options, prefix='conv')
-        # params = init_convlayer(params, (32, 32, 5, 5), options, prefix='conv_2')
+        params = init_convlayer(params, (32, 32, 3, 3), options, prefix='conv')
+        params = init_convlayer(params, (32, 32, 3, 3), options, prefix='conv_2')
 
     params = init_convlayer(params, (1, 32, 1, 1), options, prefix='combined_att_mlp_1')
 
@@ -228,7 +228,7 @@ def init_convlayer(params, w_shape, options, prefix='conv'):
     params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
     return params
 
-def convlayer(shared_params, x, options, prefix='conv', act_func='relu', pad=0, size_holes=1):
+def convlayer(shared_params, x, options, prefix='conv', act_func='tanh', pad=0, size_holes=1):
     return eval(act_func)(conv2d(x, shared_params[prefix + '_w'], border_mode=(pad, pad), filter_dilation=(size_holes, size_holes)) +
                           shared_params[prefix + '_b'].dimshuffle('x', 0, 'x', 'x'))
 
@@ -241,7 +241,7 @@ def init_LBconvlayer(params, w_shape, n_blobs, width, options, prefix='conv'):
     params[prefix + '_b'] = np.zeros(w_shape[0]).astype(floatX)
     return params
 
-def LBconvlayer(shared_params, params, x, options, prefix='conv', act_func='relu', pad=0, size_holes=1):
+def LBconvlayer(shared_params, params, x, options, prefix='conv', act_func='tanh', pad=0, size_holes=1):
     L = params[prefix + '_L'][np.newaxis, :, :, :]
     return eval(act_func)(conv2d(x, shared_params[prefix + '_w'], border_mode=(pad, pad), filter_dilation=(size_holes, size_holes)) +
                           conv2d(L, shared_params[prefix + '_w*'], border_mode=(pad, pad), filter_dilation=(size_holes, size_holes)) +
@@ -287,7 +287,7 @@ def build_model(shared_params, params, options):
     batch_size = options['batch_size']
     n_dim = options['n_dim']
 
-    w_emb = shared_params['w_emb']
+    # w_emb = shared_params['w_emb']
 
     dropout = theano.shared(numpy.float32(0.))
     image_feat = T.ftensor3('image_feat')
@@ -298,79 +298,79 @@ def build_model(shared_params, params, options):
 
     map_label = T.matrix('map_label')
     label = T.ivector('label')
-    empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
-                                              dtype='float32'),
-                               name='empty_word')
-    w_emb_extend = T.concatenate([empty_word, shared_params['w_emb']],
-                                 axis=0)
-    input_emb = w_emb_extend[input_idx]
+    # empty_word = theano.shared(value=np.zeros((1, options['n_emb']),
+    #                                           dtype='float32'),
+    #                            name='empty_word')
+    # w_emb_extend = T.concatenate([empty_word, shared_params['w_emb']],
+    #                              axis=0)
+    # input_emb = w_emb_extend[input_idx]
 
     # a trick here, set the maxpool_h/w to be large
     # maxpool_shape = (options['maxpool_h'], options['maxpool_w'])
 
     # turn those appending words into zeros
     # batch_size x T x n_emb
-    input_emb = input_emb * input_mask[:, :, None]
-    if options['sent_drop']:
-        input_emb = dropout_layer(input_emb, dropout, trng, drop_ratio)
+    # input_emb = input_emb * input_mask[:, :, None]
+    # if options['sent_drop']:
+    #     input_emb = dropout_layer(input_emb, dropout, trng, drop_ratio)
+    #
+    # if options['use_unigram_conv']:
+    #     unigram_conv_feat = fflayer(shared_params, input_emb, options,
+    #                                 prefix='conv_unigram',
+    #                                 act_func=options.get('sent_conv_act', 'tanh'))
+    #     unigram_pool_feat = unigram_conv_feat.max(axis=1)
+    # if options['use_bigram_conv']:
+    #     idx = T.concatenate([T.arange(input_emb.shape[1])[:-1],
+    #                          T.arange(input_emb.shape[1])[1:]]).reshape((2, input_emb.shape[1] - 1)).transpose().flatten()
+    #     bigram_emb = T.reshape(input_emb[:, idx, :], (input_emb.shape[0],
+    #                                                   input_emb.shape[1] - 1,
+    #                                                   2 * input_emb.shape[2]))
+    #     bigram_conv_feat = fflayer(shared_params, bigram_emb,
+    #                                options, prefix='conv_bigram',
+    #                                act_func=options.get('sent_conv_act', 'tanh'))
+    #     bigram_pool_feat = bigram_conv_feat.max(axis=1)
+    # if options['use_trigram_conv']:
+    #     idx = T.concatenate([T.arange(input_emb.shape[1])[:-2],
+    #                          T.arange(input_emb.shape[1])[1:-1],
+    #                          T.arange(input_emb.shape[1])[2:]]).reshape((3, input_emb.shape[1] - 2)).transpose().flatten()
+    #     trigram_emb = T.reshape(input_emb[:, idx, :], (input_emb.shape[0],
+    #                                                   input_emb.shape[1] - 2,
+    #                                                   3 * input_emb.shape[2]))
+    #     trigram_conv_feat = fflayer(shared_params, trigram_emb,
+    #                                 options, prefix='conv_trigram',
+    #                                 act_func=options.get('sent_conv_act', 'tanh'))
+    #     trigram_pool_feat = trigram_conv_feat.max(axis=1)  #
+    #
+    # pool_feat = T.concatenate([unigram_pool_feat,
+    #                            bigram_pool_feat,
+    #                            trigram_pool_feat], axis=1)
+    #
+    # image_feat_down = fflayer(shared_params, image_feat, options,
+    #                           prefix='image_mlp',
+    #                           act_func=options.get('image_mlp_act',
+    #                                                'tanh'))
+    # if options.get('use_before_attention_drop', False):
+    #     image_feat_down = dropout_layer(image_feat_down, dropout, trng, drop_ratio)
+    #     pool_feat = dropout_layer(pool_feat, dropout, trng, drop_ratio)
+    #
+    # # attention model begins here
+    # # first layer attention model
+    # image_feat_attention_1 = fflayer(shared_params, image_feat_down, options,
+    #                                  prefix='image_att_mlp_1',
+    #                                  act_func=options.get('image_att_mlp_act',
+    #                                                       'tanh'))
+    # pool_feat_attention_1 = fflayer(shared_params, pool_feat, options,
+    #                                 prefix='sent_att_mlp_1',
+    #                                 act_func=options.get('sent_att_mlp_act',
+    #                                                      'tanh'))
+    # combined_feat_attention_1 = image_feat_attention_1 + \
+    #                             pool_feat_attention_1[:, None, :]
+    # if options['use_attention_drop']:
+    #     combined_feat_attention_1 = dropout_layer(combined_feat_attention_1,
+    #                                               dropout, trng, drop_ratio)
 
-    if options['use_unigram_conv']:
-        unigram_conv_feat = fflayer(shared_params, input_emb, options,
-                                    prefix='conv_unigram',
-                                    act_func=options.get('sent_conv_act', 'tanh'))
-        unigram_pool_feat = unigram_conv_feat.max(axis=1)
-    if options['use_bigram_conv']:
-        idx = T.concatenate([T.arange(input_emb.shape[1])[:-1],
-                             T.arange(input_emb.shape[1])[1:]]).reshape((2, input_emb.shape[1] - 1)).transpose().flatten()
-        bigram_emb = T.reshape(input_emb[:, idx, :], (input_emb.shape[0],
-                                                      input_emb.shape[1] - 1,
-                                                      2 * input_emb.shape[2]))
-        bigram_conv_feat = fflayer(shared_params, bigram_emb,
-                                   options, prefix='conv_bigram',
-                                   act_func=options.get('sent_conv_act', 'tanh'))
-        bigram_pool_feat = bigram_conv_feat.max(axis=1)
-    if options['use_trigram_conv']:
-        idx = T.concatenate([T.arange(input_emb.shape[1])[:-2],
-                             T.arange(input_emb.shape[1])[1:-1],
-                             T.arange(input_emb.shape[1])[2:]]).reshape((3, input_emb.shape[1] - 2)).transpose().flatten()
-        trigram_emb = T.reshape(input_emb[:, idx, :], (input_emb.shape[0],
-                                                      input_emb.shape[1] - 2,
-                                                      3 * input_emb.shape[2]))
-        trigram_conv_feat = fflayer(shared_params, trigram_emb,
-                                    options, prefix='conv_trigram',
-                                    act_func=options.get('sent_conv_act', 'tanh'))
-        trigram_pool_feat = trigram_conv_feat.max(axis=1)  #
-
-    pool_feat = T.concatenate([unigram_pool_feat,
-                               bigram_pool_feat,
-                               trigram_pool_feat], axis=1)
-
-    image_feat_down = fflayer(shared_params, image_feat, options,
-                              prefix='image_mlp',
-                              act_func=options.get('image_mlp_act',
-                                                   'tanh'))
-    if options.get('use_before_attention_drop', False):
-        image_feat_down = dropout_layer(image_feat_down, dropout, trng, drop_ratio)
-        pool_feat = dropout_layer(pool_feat, dropout, trng, drop_ratio)
-
-    # attention model begins here
-    # first layer attention model
-    image_feat_attention_1 = fflayer(shared_params, image_feat_down, options,
-                                     prefix='image_att_mlp_1',
-                                     act_func=options.get('image_att_mlp_act',
-                                                          'tanh'))
-    pool_feat_attention_1 = fflayer(shared_params, pool_feat, options,
-                                    prefix='sent_att_mlp_1',
-                                    act_func=options.get('sent_att_mlp_act',
-                                                         'tanh'))
-    combined_feat_attention_1 = image_feat_attention_1 + \
-                                pool_feat_attention_1[:, None, :]
-    if options['use_attention_drop']:
-        combined_feat_attention_1 = dropout_layer(combined_feat_attention_1,
-                                                  dropout, trng, drop_ratio)
-
-    combine_reshaped = combined_feat_attention_1.swapaxes(1,2).reshape((combined_feat_attention_1.shape[0],
-                                                                        combined_feat_attention_1.shape[2],
+    combine_reshaped = image_feat.swapaxes(1,2).reshape((image_feat.shape[0],
+                                                                        image_feat.shape[2],
                                                                         14,
                                                                         14))
     # INCEPTION LAYER
@@ -481,20 +481,16 @@ def build_model(shared_params, params, options):
                                   saliency_inception,
                                   options,
                                   prefix='conv',
-                                  pad=8,
-                                  size_holes=6)
+                                  pad=3,
+                                  size_holes=3)
 
-        saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_conv, 2)
-
-        # saliency_conv = convlayer(shared_params,
-        #                               params,
-        #                               saliency_feat,
-        #                               options,
-        #                               prefix='conv_2',
-        #                               pad=8,
-        #                               size_holes=6)
-        #
-        # saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_conv, 3)
+        saliency_conv = convlayer(shared_params,
+                                      params,
+                                      saliency_feat,
+                                      options,
+                                      prefix='conv_2',
+                                      pad=3,
+                                      size_holes=3)
 
     saliency_feat = dropout_layer(saliency_feat,
                                   dropout, trng, drop_ratio)
@@ -503,8 +499,7 @@ def build_model(shared_params, params, options):
                                           saliency_feat,
                                           options,
                                           prefix='combined_att_mlp_1',
-                                          act_func=options.get('combined_att_mlp_act', 'tanh'),
-                                          pad=1)
+                                          act_func=options.get('combined_att_mlp_act', 'tanh'))
 
     combined_feat_attention_1 = combined_feat_attention_1.reshape((combined_feat_attention_1.shape[0],
                                                      combined_feat_attention_1.shape[1],
@@ -521,19 +516,6 @@ def build_model(shared_params, params, options):
         prob_map = -T.sum(T.log(prob_attention_1)*map_label, axis=1)
 
     map_cost = T.mean(prob_map)
-
-    weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
-                                 name = 'weight_decay_sub')
-
-    reg_map = 0
-
-    for k in shared_params_maps.iterkeys():
-        if k != 'w_emb':
-            reg_map += (shared_params_maps[k]**2).sum()
-
-    reg_map *= weight_decay_sub
-    map_cost += reg_map
-
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu
