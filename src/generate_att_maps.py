@@ -30,6 +30,13 @@ if model_script == 'baseline':
     dropout, cost, accu, pred_label, \
     prob_attention_1, prob_attention_2 = build_model(
         shared_params, options)
+    get_att = theano.function(
+        inputs=[
+            image_feat,
+            input_idx,
+            input_mask],
+        outputs=[prob_attention_2],
+        on_unused_input='warn')
 elif model_script=='hsan':
     from semi_joint_hsan_deepfix_att_theano import *
     options, params, shared_params = load_model(model_path)
@@ -37,18 +44,30 @@ elif model_script=='hsan':
     image_feat, input_idx, input_mask, \
     label, dropout, ans_cost, accu, pred_label, \
     prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
+    get_att = theano.function(
+        inputs=[
+            image_feat,
+            input_idx,
+            input_mask],
+        outputs=[prob_attention_2],
+        on_unused_input='warn')
+elif model_script=='deepfix':
+    from only_att_mat_theano import *
+    options, params, shared_params = load_model(model_path)
+    image_feat, input_idx, input_mask, \
+    label, dropout, \
+    prob_attention_1, map_cost, map_label = build_model(shared_params_maps, params, options)
+    get_att = theano.function(
+        inputs=[
+            image_feat,
+            input_idx,
+            input_mask],
+        outputs=[prob_attention_1],
+        on_unused_input='warn')
 
 save_folder = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/'+folder_name+'/'
 if not os.path.exists(save_folder):
     os.makedirs(save_folder)
-
-get_att_2 = theano.function(
-    inputs=[
-        image_feat,
-        input_idx,
-        input_mask],
-    outputs=[prob_attention_2],
-    on_unused_input='warn')
 
 data_path = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 
@@ -68,12 +87,12 @@ for batch_image_feat, batch_question, batch_answer_label, batch_map_label in dat
     batch_image_feat = reshape_image_feat(batch_image_feat,
                                           options['num_region'],
                                           options['region_dim'])
-    [prob_attention_2] = get_att_2(
+    [prob_attention] = get_att(
         batch_image_feat,
         np.transpose(input_idx),
         np.transpose(input_mask))
 
-    for att_map in prob_attention_2:
+    for att_map in prob_attention:
         # alpha_img = skimage.transform.pyramid_expand(att_map.reshape(14,14), upscale=16, sigma=20)
         alpha_img = att_map.reshape(14,14)
         name = str(data_provision_att_vqa._question_id[options['val_split']][i]) + '.png'
