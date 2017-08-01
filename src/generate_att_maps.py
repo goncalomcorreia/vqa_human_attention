@@ -56,7 +56,7 @@ elif model_script=='deepfix':
     options, params, shared_params = load_model(model_path)
     image_feat, input_idx, input_mask, \
     label, dropout, \
-    prob_attention_1, map_cost, map_label = build_model(shared_params_maps, params, options)
+    prob_attention_1, map_cost, map_label = build_model(shared_params, params, options)
     get_att = theano.function(
         inputs=[
             image_feat,
