@@ -780,8 +780,7 @@ def build_model(shared_params, params, options):
                                   saliency_feat,
                                   options,
                                   prefix='saliency_combined_att_mlp_2',
-                                  act_func=options.get('combined_att_mlp_act', 'tanh'),
-                                  pad=1)
+                                  act_func=options.get('combined_att_mlp_act', 'tanh'))
 
         saliency_feat = saliency_feat.reshape((saliency_feat.shape[0],
                                                saliency_feat.shape[1],
