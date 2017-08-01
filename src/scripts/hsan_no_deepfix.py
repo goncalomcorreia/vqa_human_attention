@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -16,7 +16,7 @@ import log
 import numpy as np
 np.random.seed(1234)
 from optimization_weight import *
-from multi_joint_hsan_deepfix_att_theano import *
+from semi_joint_hsan_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_provision_att_vqa_without_maps import *
 from data_processing_vqa import *
@@ -29,9 +29,9 @@ options = OrderedDict()
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix_multi'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_deepfix'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'hsan_deepfix_par_0.2'
+options['model_name'] = 'hsan_no_deepfix_lmda_0.2'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -65,7 +65,6 @@ options['maps_first_att_layer'] = False
 options['maps_second_att_layer'] = True
 options['hat_frac'] = 0.23
 options['lambda'] = 0.2
-options['use_LB'] = False
 
 # dimensions
 options['n_emb'] = 500
@@ -95,7 +94,7 @@ options['step'] = 10
 options['step_start'] = 100
 options['max_epochs'] = 50
 options['weight_decay'] = 0
-options['weight_decay_sub'] = 5e-4
+options['weight_decay_sub'] = 0
 options['decay_rate'] = numpy.float32(0.999)
 options['drop_ratio'] = numpy.float32(0.5)
 options['smooth'] = numpy.float32(1e-8)
@@ -159,23 +158,14 @@ def train(options):
     reg_cost = 0
 
     for k in shared_params.iterkeys():
-        if k != 'w_emb' or "saliency" not in k:
+        if k != 'w_emb':
             reg_cost += (shared_params[k]**2).sum()
 
     weight_decay_sub = theano.shared(numpy.float32(options['weight_decay_sub']),\
                                  name = 'weight_decay_sub')
 
-    reg_map = 0
-
-    for k in shared_params.iterkeys():
-        if 'saliency' in k:
-            reg_map += (shared_params[k]**2).sum()
-
-    reg_cost *= weight_decay
-    reg_map *= weight_decay_sub
-
     ans_reg_cost = ans_cost + reg_cost
-    map_reg_cost = map_cost + reg_map
+    map_reg_cost = map_cost
 
     total_cost = (1-options['lambda'])*ans_reg_cost + options['lambda']*map_reg_cost
 

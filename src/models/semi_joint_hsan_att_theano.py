@@ -377,19 +377,6 @@ def build_model(shared_params, options):
             prob_map = -T.sum(T.log(prob_attention_2_section)*map_label, axis=1)
         map_cost = T.mean(prob_map)
 
-    if options['mixed_att_supervision']:
-        combined_feat_attention = combined_feat_attention_1 + combined_feat_attention_2
-        prob_attention = T.nnet.softmax(combined_feat_attention[:, :, 0])
-        prob_attention_section = prob_attention[:map_label.shape[0]]
-        if options['use_kl']:
-            if options['reverse_kl']:
-                prob_map = T.sum(T.log(prob_attention_section / map_label)*prob_attention_section, axis=1)
-            else:
-                prob_map = T.sum(T.log(map_label / prob_attention_section)*map_label, axis=1)
-        else:
-            prob_map = -T.sum(T.log(prob_attention_section)*map_label, axis=1)
-        map_cost = T.mean(prob_map)
-
     image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
 

@@ -1,3 +1,4 @@
-nice python /afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/scripts/tuning/compl_tuning_and_plotting.py --changes "'model_name'":"'alt_ce_0.25'" "'task_p'":"0.25"
-nice python /afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/scripts/tuning/compl_tuning_and_plotting.py --changes "'model_name'":"'alt_ce_0.5'" "'task_p'":"0.5"
-nice python /afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/scripts/tuning/compl_tuning_and_plotting.py --changes "'model_name'":"'alt_ce_0.75'" "'task_p'":"0.75"
+nice python vqa_human_attention/src/scripts/hsan_deepfix.py --changes "'model_name'":"'no_supervision_baseline'" "'lambda'":"0."
+nice python vqa_human_attention/src/scripts/tuning/hsan_no_deepfix.py
+nice python vqa_human_attention/src/scripts/tuning/hsan_deepfix_par.py
+nice python vqa_human_attention/src/scripts/hsan_deepfix.py --changes "'model_name'":"'hsan_deepfix'" "'lambda'":"0.2"

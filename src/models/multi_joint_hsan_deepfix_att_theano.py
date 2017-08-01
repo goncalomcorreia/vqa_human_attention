@@ -220,8 +220,8 @@ def init_params(options):
             params = init_LBconvlayer(params, (32, 32, 5, 5), 16, 14, options, prefix='saliency_LB_conv')
             params = init_LBconvlayer(params, (32, 32, 5, 5), 16, 12, options, prefix='saliency_LB_conv_2')
         else:
-            params = init_convlayer(params, (32, 32, 5, 5), options, prefix='saliency_conv')
-            params = init_convlayer(params, (32, 32, 5, 5), options, prefix='saliency_conv_2')
+            params = init_convlayer(params, (32, 32, 3, 3), options, prefix='saliency_conv')
+            params = init_convlayer(params, (32, 32, 3, 3), options, prefix='saliency_conv_2')
 
         params = init_convlayer(params, (1, 32, 1, 1), options, prefix='saliency_combined_att_mlp_2')
 
@@ -759,23 +759,19 @@ def build_model(shared_params, params, options):
 
             saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_LBconv, 3)
         else:
-            saliency_conv = convlayer(shared_params,
+            saliency_feat = convlayer(shared_params,
                                       saliency_inception,
                                       options,
                                       prefix='saliency_conv',
-                                      pad=8,
-                                      size_holes=6)
+                                      pad=3,
+                                      size_holes=3)
 
-            saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_conv, 2)
-
-            saliency_conv = convlayer(shared_params,
+            saliency_feat = convlayer(shared_params,
                                       saliency_feat,
                                       options,
                                       prefix='saliency_conv_2',
-                                      pad=8,
-                                      size_holes=6)
-
-            saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_conv, 3)
+                                      pad=3,
+                                      size_holes=3)
 
         saliency_feat = dropout_layer(saliency_feat,
                                       dropout, trng, drop_ratio)
