@@ -477,14 +477,14 @@ def build_model(shared_params, params, options):
 
         saliency_feat = T.nnet.abstract_conv.bilinear_upsampling(saliency_LBconv, 3)
     else:
-        saliency_conv = convlayer(shared_params,
+        saliency_feat = convlayer(shared_params,
                                   saliency_inception,
                                   options,
                                   prefix='conv',
                                   pad=3,
                                   size_holes=3)
 
-        saliency_conv = convlayer(shared_params,
+        saliency_feat = convlayer(shared_params,
                                       params,
                                       saliency_feat,
                                       options,
