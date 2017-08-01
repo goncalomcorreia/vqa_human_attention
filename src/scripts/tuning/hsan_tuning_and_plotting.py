@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import theano.sandbox.cuda
-theano.sandbox.cuda.use('gpu1')
+theano.sandbox.cuda.use('gpu0')
 import datetime
 import os
 os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
@@ -29,9 +29,9 @@ options = OrderedDict()
 options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['map_data_path'] = '/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/data_att_maps'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/tuning'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/hsan_no_deepfix'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
-options['model_name'] = 'baseline'
+options['model_name'] = 'hsan_no_deepfix'
 options['train_split'] = 'trainval1'
 options['val_split'] = 'val2'
 options['train_split_maps'] = 'train'
@@ -67,7 +67,7 @@ options['maps_second_att_layer'] = True
 options['use_third_att_layer'] = False
 options['alt_training'] = False
 options['hat_frac'] = 0.23
-options['lambda'] = 0.5
+options['lambda'] = 0.2
 options['mixed_att_supervision'] = False
 
 # dimensions
@@ -126,13 +126,16 @@ def train(options):
     if not os.path.exists(options['expt_folder']):
         os.makedirs(options['expt_folder'])
 
-    # data_provision_att_vqa = DataProvisionAttVqaWithoutMaps(options['data_path'],
-    #                                                         options['feature_file'],
-    #                                                         options['map_data_path'])
+    data_provision_att_vqa = DataProvisionAttVqaWithoutMaps(options['data_path'],
+                                                            options['feature_file'],
+                                                            options['map_data_path'])
 
     data_provision_att_vqa_maps = DataProvisionAttVqaWithMaps(options['data_path'],
                                                               options['feature_file'],
                                                               options['map_data_path'])
+
+    data_provision_att_vqa_validate = DataProvisionAttVqa(options['data_path'],
+                                                          options['feature_file'])
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
@@ -302,10 +305,10 @@ def train(options):
         if options['sample_answer']:
             batch_image_feat_map, batch_question_map, batch_answer_label_map, batch_map_label \
                 = data_provision_att_vqa_maps.next_batch_sample(options['train_split_maps'],
-                                                       batch_size)
+                                                       map_batch_size)
         else:
             batch_image_feat_map, batch_question_map, batch_answer_label_map, batch_map_label \
-                = data_provision_att_vqa_maps.next_batch(options['train_split_maps'], batch_size)
+                = data_provision_att_vqa_maps.next_batch(options['train_split_maps'], map_batch_size)
 
         batch_image_feat_map = reshape_image_feat(batch_image_feat_map,
                                               options['num_region'],
@@ -313,15 +316,32 @@ def train(options):
 
         batch_answer_label_map = batch_answer_label_map.astype('int32').flatten()
 
+        #### NO MAP BATCH
+        if options['sample_answer']:
+            batch_image_feat, batch_question, batch_answer_label \
+                = data_provision_att_vqa.next_batch_sample(options['train_split'],
+                                                           no_map_batch_size)
+        else:
+            batch_image_feat, batch_question, batch_answer_label \
+                = data_provision_att_vqa.next_batch(options['train_split'], no_map_batch_size)
+
+        batch_image_feat = reshape_image_feat(batch_image_feat,
+                                              options['num_region'],
+                                              options['region_dim'])
+        batch_answer_label = batch_answer_label.astype('int32').flatten()
+
         #### CONCATENATE BATCHES
-        input_idx, input_mask = process_batch(batch_question_map, reverse=options['reverse'])
+        batch_image_feat = np.concatenate([batch_image_feat_map, batch_image_feat],axis = 0)
+        batch_question = np.concatenate([batch_question_map, batch_question])
+        input_idx, input_mask = process_batch(batch_question, reverse=options['reverse'])
         input_idx = np.transpose(input_idx)
         input_mask = np.transpose(input_mask)
+        batch_answer_label = np.concatenate([batch_answer_label_map, batch_answer_label],axis = 0)
 
-        [cost, accu, map_cost] = f_train(batch_image_feat_map,
+        [cost, accu, map_cost] = f_train(batch_image_feat,
                                          input_idx,
                                          input_mask,
-                                         batch_answer_label_map,
+                                         batch_answer_label,
                                          batch_map_label)
 
         f_grad_clip()
