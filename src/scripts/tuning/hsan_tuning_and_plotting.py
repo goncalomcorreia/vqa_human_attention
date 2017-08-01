@@ -106,7 +106,7 @@ options['grad_clip'] = numpy.float32(0.1)
 
 # log params
 options['disp_interval'] = 10
-options['eval_interval'] = 100
+options['eval_interval'] = 1000
 options['save_interval'] = 500
 
 def get_lr(options, curr_epoch, lr):
@@ -217,9 +217,9 @@ def train(options):
 ##############################
 
     # calculate how many iterations we need
-    #no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
+    no_map_dataset_size = data_provision_att_vqa.get_size(options['train_split'])
     map_dataset_size = data_provision_att_vqa_maps.get_size(options['train_split'])
-    num_iters_one_epoch = (map_dataset_size) / batch_size
+    num_iters_one_epoch = (no_map_dataset_size+map_dataset_size) / batch_size
     max_iters = options['max_epochs'] * num_iters_one_epoch
     eval_interval_in_iters = options['eval_interval']
     save_interval_in_iters = options['save_interval']
@@ -271,8 +271,8 @@ def train(options):
 
             ave_val_map_cost = sum(val_map_cost_list) / float(val_count)
             val_count = 0
-            for batch_image_feat, batch_question, batch_answer_label, batch_map_label \
-                in data_provision_att_vqa_maps.iterate_batch(options['val_split'],
+            for batch_image_feat, batch_question, batch_answer_label \
+                in data_provision_att_vqa_validate.iterate_batch(options['val_split'],
                                                     batch_size):
                 input_idx, input_mask \
                     = process_batch(batch_question,
@@ -357,7 +357,7 @@ def train(options):
             train_sub_task_x_axis = np.append(train_sub_task_x_axis, itr / float(num_iters_one_epoch))
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
-            # data_provision_att_vqa.random_shuffle()
+            data_provision_att_vqa.random_shuffle()
             data_provision_att_vqa_maps.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
