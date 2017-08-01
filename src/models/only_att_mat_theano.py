@@ -485,7 +485,6 @@ def build_model(shared_params, params, options):
                                   size_holes=3)
 
         saliency_feat = convlayer(shared_params,
-                                      params,
                                       saliency_feat,
                                       options,
                                       prefix='conv_2',
