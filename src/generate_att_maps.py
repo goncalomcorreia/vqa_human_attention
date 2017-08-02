@@ -37,13 +37,26 @@ if model_script == 'baseline':
             input_mask],
         outputs=[prob_attention_2],
         on_unused_input='warn')
-elif model_script=='hsan':
+elif model_script=='hsan_deepfix':
     from semi_joint_hsan_deepfix_att_theano import *
     options, params, shared_params = load_model(model_path)
     options['saliency_dropout'] = 0.5
     image_feat, input_idx, input_mask, \
     label, dropout, ans_cost, accu, pred_label, \
     prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
+    get_att = theano.function(
+        inputs=[
+            image_feat,
+            input_idx,
+            input_mask],
+        outputs=[prob_attention_2],
+        on_unused_input='warn')
+elif model_script=='hsan':
+    from semi_joint_hsan_att_theano import *
+    options, params, shared_params = load_model(model_path)
+    image_feat, input_idx, input_mask, \
+    label, dropout, ans_cost, accu, pred_label, \
+    prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
     get_att = theano.function(
         inputs=[
             image_feat,
