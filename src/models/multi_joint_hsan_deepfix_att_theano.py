@@ -813,8 +813,7 @@ def build_model(shared_params, params, options):
                                                 act_func=options.get(
                                                     'combined_att_mlp_act', 'tanh'))
 
-        combined_feat_attention_2 = saliency_attention * combined_feat_attention_2_pos + //
-                                    (1-saliency_attention) * combined_feat_attention_2_neg
+        combined_feat_attention_2 = saliency_attention * combined_feat_attention_2_pos + (1-saliency_attention) * combined_feat_attention_2_neg
 
         prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
         image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
