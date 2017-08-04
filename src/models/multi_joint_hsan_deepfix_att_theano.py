@@ -801,22 +801,22 @@ def build_model(shared_params, params, options):
 
         map_cost = T.mean(prob_map)
 
-        combined_feat_attention_2 = fflayer(shared_params,
-                                            combined_feat_attention_2, options,
-                                            prefix='answer_combined_att_mlp_2',
-                                            act_func=options.get(
-                                                'combined_att_mlp_act', 'tanh'))
+        combined_feat_attention_2_pos = fflayer(shared_params,
+                                                combined_feat_attention_2, options,
+                                                prefix='answer_combined_att_mlp_2_pos',
+                                                act_func=options.get(
+                                                    'combined_att_mlp_act', 'tanh'))
 
-        combined_feat_attention_2 = T.concatenate([saliency_feat,
-                                                   combined_feat_attention_2], axis=1)
+        combined_feat_attention_2_neg = fflayer(shared_params,
+                                                combined_feat_attention_2, options,
+                                                prefix='answer_combined_att_mlp_2_neg',
+                                                act_func=options.get(
+                                                    'combined_att_mlp_act', 'tanh'))
 
-        combined_feat_attention_2 = fflayer(shared_params,
-                                            combined_feat_attention_2[:, :, 0], options,
-                                            prefix='answer_combined_att_mlp_2_2',
-                                            act_func=options.get(
-                                                'combined_att_mlp_act', 'tanh'))
+        combined_feat_attention_2 = saliency_attention * combined_feat_attention_2_pos + //
+                                    (1-saliency_attention) * combined_feat_attention_2_neg
 
-        prob_attention_2 = T.nnet.softmax(combined_feat_attention_2)
+        prob_attention_2 = T.nnet.softmax(combined_feat_attention_2[:, :, 0])
         image_feat_ave_2 = (prob_attention_2[:, :, None] * image_feat_down).sum(axis=1)
 
     else:
