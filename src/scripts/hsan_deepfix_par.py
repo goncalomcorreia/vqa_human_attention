@@ -204,7 +204,7 @@ def train(options):
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
 
-    f_debug = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
+    f_debug = theano.function(inputs = [image_feat, input_idx, input_mask, map_label],
                               outputs = [saliency_attention],
                               on_unused_input='warn')
 
