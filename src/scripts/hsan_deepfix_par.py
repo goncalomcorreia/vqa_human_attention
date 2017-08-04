@@ -275,10 +275,10 @@ def train(options):
                                                       options['num_region'],
                                                       options['region_dim'])
                 #import pdb; pdb.set_trace()
-                [saliency_attention] = f_debug(batch_image_feat, np.transpose(input_idx),
-                                     np.transpose(input_mask),
-                                     batch_map_label)
-                import pdb; pdb.set_trace()
+                # [saliency_attention] = f_debug(batch_image_feat, np.transpose(input_idx),
+                #                      np.transpose(input_mask),
+                #                      batch_map_label)
+                # import pdb; pdb.set_trace()
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)
