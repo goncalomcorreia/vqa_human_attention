@@ -146,7 +146,7 @@ def train(options):
 
     image_feat, input_idx, input_mask, \
         label, dropout, ans_cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
+        prob_attention_1, prob_attention_2, map_cost, map_label, saliency_attention = build_model(shared_params, params, options)
 
     logger.info('finished building model')
 
@@ -203,6 +203,10 @@ def train(options):
                                   updates = update_clip)
     f_output_grad_norm = theano.function(inputs = [],
                                          outputs = grad_norm)
+
+    f_debug = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
+                              outputs = [saliency_attention]
+                              on_unused_input='warn')
 
     f_train = theano.function(inputs = [image_feat, input_idx, input_mask, label, map_label],
                               outputs = [ans_cost, accu, map_cost],
@@ -271,6 +275,10 @@ def train(options):
                                                       options['num_region'],
                                                       options['region_dim'])
                 #import pdb; pdb.set_trace()
+                [saliency_attention] = f_debug(batch_image_feat, np.transpose(input_idx),
+                                     np.transpose(input_mask),
+                                     batch_map_label)
+                import pdb; pdb.set_trace()
                 [map_cost_val] = f_val_subtask(batch_image_feat, np.transpose(input_idx),
                                      np.transpose(input_mask),
                                      batch_map_label)

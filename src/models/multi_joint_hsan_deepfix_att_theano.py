@@ -860,7 +860,7 @@ def build_model(shared_params, params, options):
         # label, dropout, cost, accu
     return image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
-        prob_attention_1, prob_attention_2, map_cost, map_label
+        prob_attention_1, prob_attention_2, map_cost, map_label, saliency_attention
 
     # return image_feat, input_idx, input_mask, \
         # label, dropout, cost, accu, pred_label, \
