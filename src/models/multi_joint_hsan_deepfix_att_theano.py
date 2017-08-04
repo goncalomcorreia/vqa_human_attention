@@ -226,11 +226,13 @@ def init_params(options):
         params = init_convlayer(params, (1, 32, 1, 1), options, prefix='saliency_combined_att_mlp_2')
 
     params = init_fflayer(params, n_attention, 1, options,
-                          prefix='answer_combined_att_mlp_2')
+                          prefix='answer_combined_att_mlp_2_pos')
+    params = init_fflayer(params, n_attention, 1, options,
+                          prefix='answer_combined_att_mlp_2_neg')
 
-    if options['maps_second_att_layer']:
-        params = init_fflayer(params, 196*2, 196, options,
-                              prefix='answer_combined_att_mlp_2_2')
+    # if options['maps_second_att_layer']:
+    #     params = init_fflayer(params, 196*2, 196, options,
+    #                           prefix='answer_combined_att_mlp_2_2')
 
     for i in range(options['combined_num_mlp']):
         if i == 0 and options['combined_num_mlp'] == 1:
