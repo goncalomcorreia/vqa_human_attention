@@ -4,18 +4,20 @@ import theano.sandbox.cuda
 theano.sandbox.cuda.use('gpu1')
 import datetime
 import os
+os.environ["THEANO_FLAGS"] = "device=gpu,floatX=float32,exception_verbosity=high"
 import sys
 import logging
 import argparse
-import pickle
 import math
-sys.path.append('/home/s1670404/imageqa-san/src/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/data-providers/')
-sys.path.append('/home/s1670404/vqa_human_attention/src/models/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
+sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 import log
+import numpy as np
+np.random.seed(1234)
 from optimization_weight import *
 from san_att_conv_twolayer_theano import *
-from data_provision_att_vqa_test import DataProvisionAttVqaTest
+from data_provision_att_vqa import DataProvisionAttVqa
 from data_processing_vqa import *
 
 ##################
