@@ -25,6 +25,7 @@ answer_dict = {v: k for k, v in answer_dict.iteritems()}
 
 model_path = sys.argv[1]
 result_file_name = sys.argv[2]
+model_script = sys.argv[3]
 
 result = OrderedDict()
 
