@@ -103,19 +103,10 @@ def train(options):
     logger.info(options)
     logger.info('start training')
 
-    if not os.path.exists(options['checkpoint_folder']):
-        os.makedirs(options['checkpoint_folder'])
 
-    if len(os.listdir(options['checkpoint_folder']))>0:
-        n_shuffles = pickle.load(open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "rb" ))
-        state = pickle.load(open(os.path.join(options['checkpoint_folder'], 'state.p'), "rb" ))
-        data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
-                                                     options['feature_file'],
-                                                     n_shuffles=n_shuffles,
-                                                     state=state)
-    else:
-        data_provision_att_vqa = DataProvisionAttVqaTest(options['data_path'],
-                                                     options['feature_file'])
+
+    data_provision_att_vqa = DataProvisionAttVqa(options['data_path'],
+                                                 options['feature_file'])
 
     batch_size = options['batch_size']
     max_epochs = options['max_epochs']
@@ -124,32 +115,8 @@ def train(options):
     # build model #
     ###############
 
-    if len(os.listdir(options['checkpoint_folder']))>0:
-        logger.info('Checkpoint files found!')
-        logger.info('Loading checkpoint files...')
-        best_param = dict()
-        for check_file in os.listdir(options['checkpoint_folder']):
-            check_model_path = os.path.join(options['checkpoint_folder'], check_file)
-            if 'best' in check_file:
-                options_best, params_best, shared_params_best = load_model(check_model_path)
-                best_val_accu = float('.'.join(check_file.split('_')[-1].split('.')[0:-1]))
-                shared_to_cpu(shared_params_best, best_param)
-            elif 'checkpoint' in check_file:
-                options, params, shared_params = load_model(check_model_path)
-                beggining_itr = int(check_file.split('_')[-1].split('.')[0])
-
-        plot_details_path = os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz')
-
-        with np.load(plot_details_path) as data:
-            val_learn_curve_acc = data['valid_accuracy']
-            val_learn_curve_err = data['valid_error']
-            itr_learn_curve = data['x_axis_epochs']
-            train_learn_curve_err = data['train_error']
-            train_learn_curve_acc = data['train_accuracy']
-
-    else:
-        params = init_params(options)
-        shared_params = init_shared_params(params)
+    params = init_params(options)
+    shared_params = init_shared_params(params)
 
     image_feat, input_idx, input_mask, \
         label, dropout, cost, accu, pred_label, \
@@ -212,20 +179,16 @@ def train(options):
     save_interval_in_iters = options['save_interval']
     disp_interval = options['disp_interval']
 
-    if 'best_val_accu' not in locals():
-        best_val_accu = 0.0
-        best_param = dict()
-        beggining_itr = 0
-        val_learn_curve_acc = np.array([])
-        val_learn_curve_err = np.array([])
-        itr_learn_curve = np.array([])
-        train_learn_curve_err = np.array([])
-        train_learn_curve_acc = np.array([])
 
-    checkpoint_param = dict()
-    checkpoint_iter_interval = num_iters_one_epoch
+    best_val_accu = 0.0
+    best_param = dict()
+    val_learn_curve_acc = np.array([])
+    val_learn_curve_err = np.array([])
+    itr_learn_curve = np.array([])
+    train_learn_curve_err = np.array([])
+    train_learn_curve_acc = np.array([])
 
-    for itr in xrange(beggining_itr, max_iters + 1):
+    for itr in xrange(max_iters + 1):
         if (itr % eval_interval_in_iters) == 0 or (itr == max_iters):
             val_cost_list = []
             val_accu_list = []
@@ -255,44 +218,6 @@ def train(options):
             val_learn_curve_acc = np.append(val_learn_curve_acc, ave_val_accu)
             val_learn_curve_err = np.append(val_learn_curve_err, ave_val_cost)
             itr_learn_curve = np.append(itr_learn_curve, itr / float(num_iters_one_epoch))
-
-        if (itr % checkpoint_iter_interval) == 0:
-            shared_to_cpu(shared_params, checkpoint_param)
-            if itr>0:
-                previous_itr = itr - checkpoint_iter_interval
-                checkpoint_model = options['model_name'] + '_checkpoint_' + '%d' %(previous_itr) + '.model'
-                if checkpoint_model in os.listdir(options['checkpoint_folder']):
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
-            file_name = options['model_name'] + '_checkpoint_' + '%d' %(itr) + '.model'
-            logger.info('saving a checkpoint model to %s' %(file_name))
-            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
-                       checkpoint_param)
-            for checkpoint_model in os.listdir(options['checkpoint_folder']):
-                if 'best' in checkpoint_model:
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_model))
-            logger.info('best validation accu so far: %f', best_val_accu)
-            file_name = options['model_name'] + '_best_' + '%.3f' %(best_val_accu) + '.model'
-            logger.info('saving the best model so far to %s' %(file_name))
-            save_model(os.path.join(options['checkpoint_folder'], file_name), options,
-                       best_param)
-            np.savez_compressed(
-                os.path.join(options['checkpoint_folder'], options['model_name']+'_plot_details.npz'),
-                valid_error=val_learn_curve_err,
-                valid_accuracy=val_learn_curve_acc,
-                x_axis_epochs=itr_learn_curve,
-                train_error=train_learn_curve_err,
-                train_accuracy=train_learn_curve_acc
-            )
-
-            n_shuffles = int(itr / float(num_iters_one_epoch))-1
-            state = data_provision_att_vqa.rng.get_state()
-
-            for checkpoint_file in os.listdir(options['checkpoint_folder']):
-                if 'shuffles' in checkpoint_file or 'state' in checkpoint_file:
-                    os.remove(os.path.join(options['checkpoint_folder'], checkpoint_file))
-
-            pickle.dump(n_shuffles, open(os.path.join(options['checkpoint_folder'], 'n_shuffles.p'), "wb" ))
-            pickle.dump(state, open(os.path.join(options['checkpoint_folder'], 'state.p'), "wb" ))
 
         dropout.set_value(numpy.float32(1.))
         if options['sample_answer']:
@@ -324,7 +249,6 @@ def train(options):
             train_learn_curve_acc = np.append(train_learn_curve_acc, accu)
 
         if options['shuffle'] and itr > 0 and itr % num_iters_one_epoch == 0:
-            logger.info("Everyday I'm shuffling!")
             data_provision_att_vqa.random_shuffle()
 
         if (itr % disp_interval) == 0  or (itr == max_iters):
@@ -346,11 +270,6 @@ def train(options):
     logger.info('saving the best model to %s' %(file_name))
     save_model(os.path.join(options['expt_folder'], file_name), options,
                best_param)
-
-    if len(os.listdir(options['checkpoint_folder']))>0:
-        logger.info('Deleting checkpoint files...')
-        for check_file in os.listdir(options['checkpoint_folder']):
-            os.remove(os.path.join(options['checkpoint_folder'], check_file))
 
     np.savez_compressed(
         os.path.join(options['expt_folder'], options['model_name']+'_plot_details.npz'),
