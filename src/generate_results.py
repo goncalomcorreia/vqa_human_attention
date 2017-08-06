@@ -7,7 +7,7 @@ sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/data-providers/')
 sys.path.append('/afs/inf.ed.ac.uk/user/s16/s1670404/vqa_human_attention/src/models/')
 from optimization_weight import *
-from semi_joint_hsan_att_theano import *
+from multi_joint_hsan_deepfix_att_theano import *
 from data_provision_att_vqa import *
 from data_processing_vqa import *
 import json
@@ -33,7 +33,7 @@ options, params, shared_params = load_model(model_path)
 options['saliency_dropout'] = 0.5
 image_feat, input_idx, input_mask, label, \
 dropout, cost, accu, pred_label, \
-prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, options)
+prob_attention_1, prob_attention_2, map_cost, map_label = build_model(shared_params, params, options)
 
 f_pass = theano.function(
     inputs=[
