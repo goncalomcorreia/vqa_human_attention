@@ -25,9 +25,9 @@ from data_processing_vqa import *
 ##################
 options = OrderedDict()
 # data related
-options['data_path'] = '/home/s1670404/vqa_human_attention/data_vqa'
+options['data_path'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/data_vqa'
 options['feature_file'] = 'trainval_feat.h5'
-options['expt_folder'] = '/home/s1670404/vqa_human_attention/expt/baseline'
+options['expt_folder'] = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/expt/baseline'
 options['checkpoint_folder'] = os.path.join(options['expt_folder'], 'checkpoints')
 options['model_name'] = 'baseline_noreg'
 options['train_split'] = 'trainval1'
