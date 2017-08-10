@@ -77,6 +77,21 @@ elif model_script=='deepfix':
             input_mask],
         outputs=[prob_attention_1],
         on_unused_input='warn')
+elif model_script=='hsan_deepfix_split':
+    from multi_joint_hsan_deepfix_att_theano import *
+    options, params, shared_params = load_model(model_path)
+    image_feat, input_idx, input_mask, \
+    label, dropout, ans_cost, accu, pred_label, \
+    prob_attention_1, prob_attention_2, map_cost, \
+    map_label, saliency_attention = build_model(shared_params, params, options)
+    get_att = theano.function(
+        inputs=[
+            image_feat,
+            input_idx,
+            input_mask],
+        outputs=[prob_attention_2],
+        on_unused_input='warn')
+
 
 save_folder = '/afs/inf.ed.ac.uk/group/synproc/Goncalo/'+folder_name+'/'
 if not os.path.exists(save_folder):
