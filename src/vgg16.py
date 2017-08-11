@@ -14,6 +14,7 @@ from scipy.misc import imread, imresize
 import os
 import h5py
 import pickle as pkl
+import sys
 
 
 class vgg16:
@@ -262,7 +263,7 @@ if __name__ == '__main__':
     test_data = np.array([]).reshape(0,100352)
     test_imids = []
 
-    data_path = '/Users/goncalocorreia/VQA/Images/mscoco/test2015'
+    data_path = sys.argv[1]
 
     for test_img in os.listdir(data_path):
         image_id = test_img.split('_')[-1].split('.')[0]
