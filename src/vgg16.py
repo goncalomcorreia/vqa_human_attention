@@ -20,10 +20,11 @@ import sys
 class vgg16:
     def __init__(self, imgs, weights=None, sess=None):
         self.imgs = imgs
-        self.convlayers()
-        self.fc_layers()
-        self.probs = tf.nn.softmax(self.fc3l)
-        self.lastpool = self.pool5
+        with tf.device('/gpu:0'):
+            self.convlayers()
+            self.fc_layers()
+            self.probs = tf.nn.softmax(self.fc3l)
+            self.lastpool = self.pool5
         if weights is not None and sess is not None:
             self.load_weights(weights, sess)
 
