@@ -296,7 +296,7 @@ if __name__ == '__main__':
             pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
             test_data = np.concatenate([test_data, pool], axis=0)
             print "done!"
-        num = os.path.basename(os.path.normpath())
+        num = os.path.basename(os.path.normpath(root))
         print num
         test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat_'+num+'.h5', 'w')
         test_feat_h5['feat'] = test_data
