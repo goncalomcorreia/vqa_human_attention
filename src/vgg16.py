@@ -282,8 +282,8 @@ if __name__ == '__main__':
             test_data = np.concatenate([test_data, pool], axis=0)
 
     test_imids = [int(elem) for elem in test_imids]
-    with open('test_image_list.pkl', 'w') as f:
+    with open('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_image_list.pkl', 'w') as f:
         pkl.dump(test_imids, f)
-    test_feat_h5 = h5py.File('test_feat.h5', 'w')
+    test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
     test_feat_h5['feat'] = test_data
     test_feat_h5.close()
