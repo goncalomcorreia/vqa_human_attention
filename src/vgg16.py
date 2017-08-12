@@ -278,8 +278,8 @@ if __name__ == '__main__':
             img1 = imresize(img1, (448, 448))
             image_list.append(img1)
         image_list = np.array(image_list)
-        image_list = np.array_split(x, 10)
-        image_list = [x for x in a if x.size > 0]
+        image_list = np.array_split(image_list, 10)
+        image_list = [x for x in image_list if x.size > 0]
         print root
         for test_img in test_imgs:
             image_id = test_img.split('_')[-1].split('.')[0]
