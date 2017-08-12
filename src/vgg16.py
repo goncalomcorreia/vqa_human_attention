@@ -15,6 +15,7 @@ import os
 import h5py
 import pickle as pkl
 import sys
+import glob
 
 
 class vgg16:
@@ -267,12 +268,14 @@ if __name__ == '__main__':
     data = np.array([])
     indices = np.array([])
     n=0
-    from PIL import Image
-    import glob
+
+    test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
+    test_feat_h5['data'] = np.array([])
+    test_feat_h5['indices'] = np.array([])
+    test_feat_h5['indptr'] = np.array([0])
 
     data_path = sys.argv[1]
     for root, subdirs, test_imgs in os.walk(data_path):
-    # for test_img in os.listdir(data_path):
         if len(test_imgs)==0:
             continue
 
@@ -303,17 +306,21 @@ if __name__ == '__main__':
 
         num = os.path.basename(os.path.normpath(root))
         print num
-        data = np.append(data, test_data[np.nonzero(test_data)])
-        indices = np.append(indices, np.nonzero(test_data)[1])
-        indptr = np.append(indptr, (np.cumsum(np.count_nonzero(test_data, axis=1)) + indptr[-1]))
+        test_feat_h5['data'] = np.append(test_feat_h5['data'], test_data[np.nonzero(test_data)])
+        test_feat_h5['indices'] = np.append(test_feat_h5['indices'], np.nonzero(test_data)[1])
+        test_feat_h5['indptr'] = np.append(test_feat_h5['indptr'],
+                                           (np.cumsum(
+                                               np.count_nonzero(
+                                                   test_data,
+                                                    axis=1)) + test_feat_h5['indptr'][-1]))
 
         n += test_data.shape[0]
         test_data = np.array([]).reshape(0,100352)
 
-    test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
-    test_feat_h5['data'] = data
-    test_feat_h5['indices'] = indices
-    test_feat_h5['indptr'] = indptr
+    # test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
+    # test_feat_h5['data'] = data
+    # test_feat_h5['indices'] = indices
+    # test_feat_h5['indptr'] = indptr
     test_feat_h5['shape'] = (n, 100352)
     test_feat_h5.close()
 
