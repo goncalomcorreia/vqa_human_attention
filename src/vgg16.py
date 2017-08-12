@@ -300,9 +300,7 @@ if __name__ == '__main__':
         print num
         test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat_'+num+'.h5', 'w')
         test_feat_h5['feat'] = test_data
+        test_feat_h5['imids'] = test_imids
         test_feat_h5.close()
         test_data = np.array([]).reshape(0,100352)
-
-    test_imids = [int(elem) for elem in test_imids]
-    with open('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_image_list.pkl', 'w') as f:
-        pkl.dump(test_imids, f)
+        test_imids = []
