@@ -263,6 +263,10 @@ if __name__ == '__main__':
     vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
     test_data = np.array([]).reshape(0,100352)
     test_imids = []
+    indptr = np.array([0])
+    data = np.array([])
+    indices = np.array([])
+    n=0
     from PIL import Image
     import glob
 
@@ -286,21 +290,32 @@ if __name__ == '__main__':
                 print "done!"
                 image_list = []
 
-        for test_img in test_imgs:
-            image_id = test_img.split('_')[-1].split('.')[0]
-            test_imids.append(image_id)
-
         if len(image_list)!=0:
             image_list = np.array(image_list)
             pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: image_list})
             pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
             test_data = np.concatenate([test_data, pool], axis=0)
             print "done!"
+
+        for test_img in test_imgs:
+            image_id = test_img.split('_')[-1].split('.')[0]
+            test_imids.append(image_id)
+
         num = os.path.basename(os.path.normpath(root))
         print num
-        test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat_'+num+'.h5', 'w')
-        test_feat_h5['feat'] = test_data
-        test_feat_h5['imids'] = test_imids
-        test_feat_h5.close()
+        data = np.append(data, test_data[np.nonzero(test_data)])
+        indices = np.append(indices, np.nonzero(test_data)[1])
+        indptr = np.append(indptr, (np.cumsum(np.count_nonzero(test_data, axis=1)) + indptr[-1]))
+
+        n += test_data.shape[0]
         test_data = np.array([]).reshape(0,100352)
-        test_imids = []
+
+    test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
+    test_feat_h5['data'] = data
+    test_feat_h5['indices'] = indices
+    test_feat_h5['indptr'] = indptr
+    test_feat_h5['shape'] = (n, 100352)
+    test_feat_h5.close()
+
+    with open('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_imids.pkl', 'w') as f:
+        pkl.dump(test_imids, f)
