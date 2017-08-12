@@ -278,15 +278,16 @@ if __name__ == '__main__':
             img1 = imresize(img1, (448, 448))
             image_list.append(img1)
         image_list = np.array(image_list)
-
+        image_list = np.array_split(x, 10)
+        image_list = [x for x in a if x.size > 0]
         print root
         for test_img in test_imgs:
             image_id = test_img.split('_')[-1].split('.')[0]
             test_imids.append(image_id)
-
-        pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: image_list})
-        pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
-        test_data = np.concatenate([test_data, pool], axis=0)
+        for image_batch in image_list:
+            pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: image_batch})
+            pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
+            test_data = np.concatenate([test_data, pool], axis=0)
         print "done!"
 
     test_imids = [int(elem) for elem in test_imids]
