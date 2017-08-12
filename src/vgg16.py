@@ -296,10 +296,13 @@ if __name__ == '__main__':
             pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
             test_data = np.concatenate([test_data, pool], axis=0)
             print "done!"
+        num = os.path.basename(os.path.normpath())
+        print num
+        test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat_'+num+'.h5', 'w')
+        test_feat_h5['feat'] = test_data
+        test_feat_h5.close()
+        test_data = np.array([]).reshape(0,100352)
 
     test_imids = [int(elem) for elem in test_imids]
     with open('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_image_list.pkl', 'w') as f:
         pkl.dump(test_imids, f)
-    test_feat_h5 = h5py.File('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_feat.h5', 'w')
-    test_feat_h5['feat'] = test_data
-    test_feat_h5.close()
