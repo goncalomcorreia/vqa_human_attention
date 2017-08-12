@@ -269,6 +269,7 @@ if __name__ == '__main__':
     # for test_img in os.listdir(data_path):
         if len(test_imgs)==0:
             continue
+        print root
         for test_img in test_imgs:
             image_id = test_img.split('_')[-1].split('.')[0]
             test_imids.append(image_id)
