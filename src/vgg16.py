@@ -20,11 +20,11 @@ import sys
 class vgg16:
     def __init__(self, imgs, weights=None, sess=None):
         self.imgs = imgs
-        with tf.device('/gpu:0'):
-            self.convlayers()
-            self.fc_layers()
-            self.probs = tf.nn.softmax(self.fc3l)
-            self.lastpool = self.pool5
+        #with tf.device('/gpu:0'):
+        self.convlayers()
+        self.fc_layers()
+        self.probs = tf.nn.softmax(self.fc3l)
+        self.lastpool = self.pool5
         if weights is not None and sess is not None:
             self.load_weights(weights, sess)
 
@@ -263,23 +263,31 @@ if __name__ == '__main__':
     vgg = vgg16(imgs, 'vgg16_weights.npz', sess)
     test_data = np.array([]).reshape(0,100352)
     test_imids = []
+    from PIL import Image
+    import glob
 
     data_path = sys.argv[1]
     for root, subdirs, test_imgs in os.walk(data_path):
     # for test_img in os.listdir(data_path):
         if len(test_imgs)==0:
             continue
+
+        image_list = []
+        for filename in glob.glob(os.path.join(root, "*.jpg")):
+            img1 = imread(filename, mode='RGB')
+            img1 = imresize(img1, (448, 448))
+            image_list.append(img1)
+        image_list = np.array(image_list)
+
         print root
         for test_img in test_imgs:
             image_id = test_img.split('_')[-1].split('.')[0]
             test_imids.append(image_id)
-            file_path = os.path.join(root, test_img)
-            img1 = imread(file_path, mode='RGB')
-            img1 = imresize(img1, (448, 448))
 
-            pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: [img1]})
-            pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
-            test_data = np.concatenate([test_data, pool], axis=0)
+        pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: image_list})
+        pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
+        test_data = np.concatenate([test_data, pool], axis=0)
+        print "done!"
 
     test_imids = [int(elem) for elem in test_imids]
     with open('/afs/inf.ed.ac.uk/group/synproc/Goncalo/test_image_list.pkl', 'w') as f:
