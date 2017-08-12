@@ -278,7 +278,7 @@ if __name__ == '__main__':
             img1 = imread(filename, mode='RGB')
             img1 = imresize(img1, (448, 448))
             image_list.append(img1)
-            if len(image_list) == 1:
+            if len(image_list) == 50:
                 image_list = np.array(image_list)
                 pool = sess.run(vgg.lastpool, feed_dict={vgg.imgs: image_list})
                 pool = np.reshape(pool, (pool.shape[0], pool.shape[1]*pool.shape[2]*pool.shape[3]))
