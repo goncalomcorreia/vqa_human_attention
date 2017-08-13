@@ -24,11 +24,12 @@ with open('/Users/goncalocorreia/vqa_human_attention/data_vqa/question_dict.pkl'
 ############################
 # processing test questions #
 ############################
+version     = 'v2'
 taskType    = 'OpenEnded'
 dataType    = 'mscoco'
 dataSubType = 'test2015'
 annFile     = '%s/Annotations/%s_%s_annotations.json'%(dataDir, dataType, dataSubType)
-quesFile    = '%s/Questions/%s_%s_%s_questions.json'%(dataDir, taskType, dataType, dataSubType)
+quesFile    = '%s/Questions/%s_%s_%s_%s_questions.json'%(dataDir, version, taskType, dataType, dataSubType)
 imgDir      ='%s/Images/%s/' %(dataDir, dataSubType)
 
 questions = json.load(open(quesFile, 'r'))
@@ -60,7 +61,7 @@ test_question_idx = np.array(test_question_idx)
 # # # dumping to disk #
 # #####################
 
-with open('/Users/goncalocorreia/vqa_human_attention/data_vqa/test.pkl', 'w') as f:
+with open('/Users/goncalocorreia/vqa_human_attention/data_vqa/test_v2.pkl', 'w') as f:
     pkl.dump(test_question_ids, f)
     pkl.dump(test_image_ids, f)
     pkl.dump(test_question_idx, f)
