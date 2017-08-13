@@ -23,7 +23,7 @@ class DataProvisionAttVqaTest(DataProvisionAttVqa):
             rng = np.random.RandomState(1234)
         self.rng = rng
         for split in self._splits:
-            with open(os.path.join(data_folder, split) + '.pkl') as f:
+            with open(os.path.join(data_folder, split) + '_v2.pkl') as f:
                 split_question_id = pkl.load(f)
                 split_image_id = pkl.load(f)
                 split_question = pkl.load(f)
