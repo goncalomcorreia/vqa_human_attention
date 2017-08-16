@@ -1,8 +1,6 @@
-# imageqa-san
-Source code for
+# vqa-human-attention
+Adapted from
 [Stacked attention networks for image question answering](http://arxiv.org/abs/1511.02274).
-
-Joint collaboration between CMU and MSR.
 
 ## Dependencies
 The code is in python and uses Theano package.
@@ -13,30 +11,13 @@ The code is in python and uses Theano package.
 
 
 ## Usage
-Download the data from [here](https://drive.google.com/file/d/0BxWe_IuTnMFcUHBhTnFHbzEzaDA/view?usp=sharing) and extract them at ```data_vqa``` folder.
-```
-cd src; python san_att_conv_twolayer.py
-```
-to start training.
 
-## Reference
-If you use this code as part of your research, please cite our paper
+Data can be found in project space /afs/inf.ed.ac.uk/group/synproc/Goncalo/ in
+in folders 'data_vqa' and 'data_att_maps'
 
-**''Stacked Attention Netowrks for Image Question Answering''**,
-Zichao Yang, Xiaodong He, Jianfeng Gao, Li Deng and Alex Smola.
-To appear in CVPR 2016.
+To train a model,
+```
+cd src/scripts; python mtl_san_deepfix.py
+```
 
-```
-@article{YangHGDS15,
-author    = {Zichao Yang and
-Xiaodong He and
-Jianfeng Gao and
-Li Deng and
-Alexander J. Smola},
-title     = {Stacked Attention Networks for Image Question Answering},
-journal   = {CoRR},
-volume    = {abs/1511.02274},
-year      = {2015},
-url       = {http://arxiv.org/abs/1511.02274},
-}
-```
+Scripts in folder src/scripts have the same name as the respective model described in the dissertation.
