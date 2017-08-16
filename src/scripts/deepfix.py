@@ -17,7 +17,7 @@ import log
 import numpy as np
 np.random.seed(1234)
 from optimization_weight import *
-from only_att_mat_theano import *
+from deepfix_att_theano import *
 from data_provision_att_vqa_with_maps import *
 from data_processing_vqa import *
 
