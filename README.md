@@ -21,6 +21,6 @@ There is another README.md inside src describing the files there.
 
 ## Results
 
-![alt text](https://raw.githubusercontent.com/goncalomcorreia/vqa_human_attention/master/img/good.png)
+![alt tag](http://imgur.com/a/BM2rJ)
 
-![alt text](https://raw.githubusercontent.com//goncalomcorreia/vqa_human_attention//master/img/bad.png)
+![alt tag](http://imgur.com/a/5zLzZ)
