@@ -1,5 +1,5 @@
 # vqa-human-attention
-Adapted from
+Code adapted from
 [Stacked attention networks for image question answering](http://arxiv.org/abs/1511.02274).
 
 ## Dependencies
