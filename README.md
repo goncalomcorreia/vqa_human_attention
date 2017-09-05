@@ -12,17 +12,15 @@ The code is in python and uses Theano package.
 
 ## Usage
 
-Data can be found in project space /afs/inf.ed.ac.uk/group/synproc/Goncalo/ in
-in folders 'data_vqa' and 'data_att_maps'
-
 To train a model,
 ```
 cd src/scripts; python mtl_san_deepfix.py
 ```
 
-Scripts in folder src/scripts have the same name as the respective model described in the dissertation.
-The pretrained models can be found in /afs/inf.ed.ac.uk/group/synproc/Goncalo/expt
-
-.json files in /afs/inf.ed.ac.uk/group/synproc/Goncalo/ are the test set predictions. The results were obtained by uploading them to the VQA server (version 1.0).
-
 There is another README.md inside src describing the files there.
+
+## Results
+
+![alt text](https://raw.githubusercontent.com/goncalomcorreia/vqa_human_attention/master/img/good.pdf)
+
+![alt text](https://raw.githubusercontent.com/goncalomcorreia/vqa_human_attention/master/img/bad.pdf)
