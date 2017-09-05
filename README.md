@@ -21,6 +21,8 @@ There is another README.md inside src describing the files there.
 
 ## Results
 
+Some results can be found below. "Human Attention and Answer" is the ground-truth. "SAN" is our main baseline - the Stacked Attention Network. Our main algorithm is "MTL SAN+DeepFix", able to improve VQA accuracy of our baseline SAN, while mimicking human attention. Remaining models are different baselines. Thorough explanations can be found in msc-dissertation.pdf
+
 ![alt tag](http://i.imgur.com/wO82ecj.jpg)
 
 ![alt tag](http://i.imgur.com/Wetfozn.jpg)
