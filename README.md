@@ -21,6 +21,6 @@ There is another README.md inside src describing the files there.
 
 ## Results
 
-![alt tag](http://imgur.com/a/BM2rJ)
+![alt tag](http://i.imgur.com/wO82ecj.jpg)
 
-![alt tag](http://imgur.com/a/5zLzZ)
+![alt tag](http://i.imgur.com/Wetfozn.jpg)
