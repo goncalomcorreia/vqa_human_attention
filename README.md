@@ -1,6 +1,8 @@
 # Making Machines More Human: A Multitask Learning Approach to VQA and Human Attention Prediction
 
-My MSc Dissertation Project had the goal of developing a Deep Learning algorithm capable of improving VQA performance of a state-of-the-art architecture while mimicking human attention, using the [VQA-HAT dataset](https://computing.ece.vt.edu/~abhshkdz/vqa-hat/). The Project was successful and some results can be found below and in msc-dissertation.pdf available in this repository.
+My MSc Dissertation Project had the goal of developing a Deep Learning algorithm capable of improving VQA performance of a state-of-the-art architecture while mimicking human attention, using the [VQA-HAT dataset](https://computing.ece.vt.edu/~abhshkdz/vqa-hat/). The Project was successful and some results can be found below.
+
+The Dissertation PDF can be found in this repository - msc-dissertation.pdf.
 
 Code adapted from
 [Stacked attention networks for image question answering](http://arxiv.org/abs/1511.02274).
