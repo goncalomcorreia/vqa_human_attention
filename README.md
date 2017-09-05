@@ -23,4 +23,4 @@ There is another README.md inside src describing the files there.
 
 ![alt text](https://raw.githubusercontent.com/goncalomcorreia/vqa_human_attention/master/img/good.pdf)
 
-![alt text](https://raw.githubusercontent.com/goncalomcorreia/vqa_human_attention/master/img/bad.pdf)
+![alt text](https://raw.githubusercontent.com//goncalomcorreia/vqa_human_attention/blob/master/img/bad.pdf)
